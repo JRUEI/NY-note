@@ -5,10 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>NY-note 全方位知識庫</title>
   <style>
+    /* ----------------------------------
+       全域變數與防跑版設定
+       ---------------------------------- */
     :root { --zoom-factor: 1; --wiki-font-factor: 1; }
-    body { margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden; background-color: #1a1a1a; color: #EBEBEB; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Microsoft JhengHei", sans-serif; }
     
-    .sidebar { width: 320px; background: #111111; display: flex; flex-direction: column; border-right: 1px solid #2A2A2A; box-shadow: 2px 0 15px rgba(0,0,0,0.5); z-index: 100; flex-shrink: 0; }
+    /* ⭐ 強制所有元素不超出版面 */
+    *, *::before, *::after { box-sizing: border-box; }
+    
+    body { margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden; background-color: #1a1a1a; color: #EBEBEB; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Microsoft JhengHei", sans-serif; width: 100vw; }
+    
+    /* 左側邊欄 */
+    .sidebar { width: 320px; max-width: 85vw; background: #111111; display: flex; flex-direction: column; border-right: 1px solid #2A2A2A; box-shadow: 2px 0 15px rgba(0,0,0,0.5); z-index: 100; flex-shrink: 0; }
     .sidebar-header { padding: 30px 20px 15px 20px; border-bottom: 1px solid #2A2A2A; display: flex; flex-direction: column; gap: 15px; }
     .header-top { display: flex; justify-content: space-between; align-items: center; }
     .header-top h2 { margin: 0; font-size: 20px; color: #E8C97A; letter-spacing: 0.05em; }
@@ -35,38 +43,49 @@
     .chapter-link.active-chapter { color: #E8C97A; }
     .chapter-link.active-chapter::before { content: "▸"; color: #E8C97A; font-size: 14px; top: 10px; left: 22px; }
 
-    .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #1a1a1a; position: relative; }
-    .toolbar { background: rgba(20,20,20,0.95); padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2A2A2A; z-index: 50; flex-shrink: 0; }
-    .toolbar-left { display: flex; align-items: center; gap: 15px; }
+    /* 主內容區與工具列 */
+    .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #1a1a1a; position: relative; width: 100%; }
+    .toolbar { background: rgba(20,20,20,0.95); padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2A2A2A; z-index: 50; flex-shrink: 0; width: 100%; }
+    .toolbar-left { display: flex; align-items: center; gap: 15px; overflow: hidden; }
     .hamburger { display: none; font-size: 24px; background: none; border: none; color: #E8C97A; cursor: pointer; padding: 0; }
-    .toolbar h3 { margin: 0; font-size: 22px; }
-    .action-btn { background: #E8C97A; color: #111; border: none; padding: 10px 24px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+    .toolbar h3 { margin: 0; font-size: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .action-btn { background: #E8C97A; color: #111; border: none; padding: 10px 24px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
     
+    /* ⭐ 百科閱讀進度條 (固定在工具列下方) */
+    .progress-container { width: 100%; height: 3px; background: #222; display: none; position: relative; z-index: 49; flex-shrink: 0; }
+    .progress-container.active { display: block; }
+    .progress-bar { height: 100%; width: 0%; background: #E8C97A; transition: width 0.1s ease-out; box-shadow: 0 0 10px rgba(232,201,122,0.5); }
+
+    /* 懸浮縮放控制面板 */
     .zoom-controls { position: fixed; bottom: 40px; right: 40px; background: rgba(20,20,20,0.9); border: 1px solid #333; border-radius: 12px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; z-index: 999; box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(10px); }
     .zoom-controls button { background: #2a2a2a; color: #E8C97A; border: 1px solid #444; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; border: none; }
     .zoom-controls span { color: #EBEBEB; font-size: 15px; min-width: 65px; text-align: center; font-weight: bold; font-family: monospace; }
     #zoom-reset { width: auto; padding: 0 16px; font-size: 14px; }
 
-    .view-container { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+    /* 視圖區塊 */
+    .view-container { display: none; flex: 1; overflow: hidden; flex-direction: column; width: 100%; }
     .view-container.active { display: flex; }
     
+    /* 🖼️ 圖卡區 (電腦版) */
     .cards-pane { display: none; flex: 1; overflow-y: auto; padding: 60px 20px; flex-direction: column; align-items: center; gap: 40px; }
     .cards-pane.active { display: flex; }
     .card-wrapper { width: calc(1080px * 0.35 * var(--zoom-factor)); height: calc(1920px * 0.35 * var(--zoom-factor)); flex-shrink: 0; position: relative; transition: all 0.2s ease; }
     .card-wrapper > div { transform: scale(calc(0.35 * var(--zoom-factor))); transform-origin: top left; box-shadow: 0 40px 100px rgba(0,0,0,0.8); position: absolute; top: 0; left: 0; border-radius: 20px; }
     
+    /* 📖 百科區 */
     .wiki-pane { display: none; flex: 1; overflow-y: auto; scroll-behavior: smooth; }
     .wiki-pane.active { display: block; }
-    .article-container { max-width: 800px; margin: 0 auto; padding: 60px 40px 100px 40px; color: #d1d5db; line-height: 1.8; font-size: calc(18px * var(--wiki-font-factor)); }
+    .article-container { max-width: 800px; margin: 0 auto; padding: 60px 40px 100px 40px; color: #d1d5db; line-height: 1.8; font-size: calc(18px * var(--wiki-font-factor)); overflow-wrap: break-word; word-break: break-word; }
     .article-container h1 { font-family: 'Songti TC', 'PMingLiU', serif; font-size: calc(48px * var(--wiki-font-factor)); color: #fff; line-height: 1.3; margin-bottom: 20px; }
     .article-container .meta { color: #E8C97A; font-size: calc(16px * var(--wiki-font-factor)); margin-bottom: 60px; font-weight: bold; display: flex; gap: 20px; border-bottom: 1px solid #333; padding-bottom: 20px; }
     .article-section { margin-bottom: 100px; scroll-margin-top: 40px; position: relative; }
-    .article-section h2, .article-section p { position: relative; z-index: 2; }
-    .article-section h2 { font-family: 'Songti TC', 'PMingLiU', serif; font-size: calc(32px * var(--wiki-font-factor)); color: #fff; margin: 0 0 30px 0; padding-left: 16px; border-left: 4px solid #1565C0; }
-    .article-section blockquote { margin: 40px 0 40px 40px; padding: 24px 32px; background: rgba(34,34,34, 0.7); border-left: 4px solid #E8C97A; font-family: 'Songti TC', 'PMingLiU', serif; font-size: calc(22px * var(--wiki-font-factor)); color: #E8C97A; border-radius: 0 12px 12px 0; position: relative; z-index: 2; }
     .watermark { position: absolute; top: -60px; right: 10px; font-family: 'Songti TC', 'PMingLiU', serif; font-size: calc(260px * var(--wiki-font-factor)); font-weight: 900; color: rgba(232, 201, 122, 0.04); line-height: 1; z-index: 0; user-select: none; pointer-events: none; }
-    .tag { display: inline-block; background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 4px; font-size: calc(14px * var(--wiki-font-factor)); margin-bottom: 20px; position: relative; z-index: 2; }
+    .article-section h2, .article-section p, .article-section blockquote { position: relative; z-index: 1; }
+    .article-section h2 { font-family: 'Songti TC', 'PMingLiU', serif; font-size: calc(32px * var(--wiki-font-factor)); color: #fff; margin: 0 0 30px 0; padding-left: 16px; border-left: 4px solid #1565C0; }
+    .article-section blockquote { margin: 40px 0 40px 40px; padding: 24px 32px; background: rgba(34,34,34, 0.7); border-left: 4px solid #E8C97A; font-family: 'Songti TC', 'PMingLiU', serif; font-size: calc(22px * var(--wiki-font-factor)); color: #E8C97A; border-radius: 0 12px 12px 0; }
+    .tag { display: inline-block; background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 4px; font-size: calc(14px * var(--wiki-font-factor)); margin-bottom: 20px; position: relative; z-index: 1; }
     
+    /* 🧠 心智圖區 */
     .mindmap-pane { display: none; flex: 1; overflow: auto; padding: 60px 80px; background: #161616; }
     .mindmap-pane.active { display: block; }
     .mm-tree { display: flex; align-items: center; font-family: 'PingFang TC', sans-serif; margin-bottom: 100px; zoom: var(--zoom-factor); }
@@ -84,23 +103,45 @@
     .mm-leaf { background: #111; border: 1px solid #333; color: #bbb; font-size: 15px; transition: 0.2s; }
     .mm-leaf:hover { border-color: #E8C97A; color: #fff; transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.6); }
 
+    /* ----------------------------------
+       手機版適配 (RWD - 防跑版終極修正)
+       ---------------------------------- */
     .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 90; backdrop-filter: blur(2px); }
     .sidebar-overlay.active { display: block; }
+    
     @media (max-width: 768px) {
       .hamburger { display: block; }
       .sidebar { position: fixed; left: -320px; height: 100vh; transition: left 0.3s ease; }
       .sidebar.open { left: 0; }
+      
       .toolbar { padding: 15px 20px; }
-      .toolbar h3 { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+      .toolbar h3 { font-size: 16px; max-width: 140px; } /* 防止標題過長撐開 */
       #statusText { display: none; }
       .action-btn { padding: 8px 12px; font-size: 13px; }
+      
       .zoom-controls { bottom: 20px; right: 20px; padding: 6px 10px; gap: 5px; }
       .zoom-controls button { width: 30px; height: 30px; font-size: 16px; }
       .zoom-controls span { font-size: 13px; min-width: 50px; }
-      .cards-pane { flex-direction: row; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; padding: 20px 15vw; gap: 15px; align-items: center; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+
+      /* ⭐ 手機版圖卡輪播：絕對置中、防溢出 */
+      .cards-pane { 
+        flex-direction: row; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; 
+        /* 左右留白精準為 12.5vw，讓 75vw 的卡片完美置中 (12.5 + 75 + 12.5 = 100) */
+        padding: 20px 12.5vw; 
+        gap: 20px; align-items: center; -webkit-overflow-scrolling: touch; scrollbar-width: none; 
+      }
       .cards-pane::-webkit-scrollbar { display: none; }
-      .card-wrapper { width: calc((100vw - 40px) * var(--zoom-factor)); height: calc((100vw - 40px) * (1920 / 1080) * var(--zoom-factor)); scroll-snap-align: center; margin-bottom: 0; }
-      .card-wrapper > div { transform: scale(calc(((100vw - 40px) / 1080) * var(--zoom-factor))); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+      .card-wrapper { 
+        width: calc(75vw * var(--zoom-factor)); 
+        height: calc(75vw * (1920 / 1080) * var(--zoom-factor)); 
+        scroll-snap-align: center; margin-bottom: 0 !important; 
+      }
+      .card-wrapper > div { 
+        transform: scale(calc((75vw / 1080) * var(--zoom-factor))); 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+      }
+
+      /* 手機版百科防破版 */
       .article-container { padding: 20px 20px 80px 20px; font-size: calc(16px * var(--wiki-font-factor)); }
       .article-container h1 { font-size: calc(32px * var(--wiki-font-factor)); }
       .article-section h2 { font-size: calc(24px * var(--wiki-font-factor)); }
@@ -109,7 +150,6 @@
       .mindmap-pane { padding: 30px 20px; }
     }
 
-    /* 載入畫面提升防彈設計 */
     #loading { position: fixed; inset: 0; background: #111; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #E8C97A; font-size: 24px; transition: 0.5s; flex-direction: column; gap: 20px; text-align: center;}
     .loader-spinner { width: 50px; height: 50px; border: 5px solid #333; border-top-color: #E8C97A; border-radius: 50%; animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -157,6 +197,11 @@
       </div>
       <button class="action-btn" id="toolbarBtn" onclick="downloadAllCards()">⬇️ 一鍵打包</button>
     </div>
+    
+    <!-- ⭐ 閱讀進度條 -->
+    <div class="progress-container" id="progress-container">
+      <div class="progress-bar" id="wiki-progress"></div>
+    </div>
 
     <div id="view-cards" class="view-container active"></div>
     <div id="view-wiki" class="view-container"></div>
@@ -181,7 +226,17 @@
     function applyZoomDisplay() { if (currentAppMode === 'wiki') { document.getElementById('zoom-level').innerText = Math.round(fontZoom * 100) + '%(字)'; document.documentElement.style.setProperty('--wiki-font-factor', fontZoom); } else { document.getElementById('zoom-level').innerText = Math.round(viewZoom * 100) + '%'; document.documentElement.style.setProperty('--zoom-factor', viewZoom); } }
 
     function handleWikiScroll(e) {
-      const pane = e.target; const paneRect = pane.getBoundingClientRect(); const sections = pane.querySelectorAll('.article-section'); let currentId = '';
+      const pane = e.target; 
+      const paneRect = pane.getBoundingClientRect(); 
+      const sections = pane.querySelectorAll('.article-section'); 
+      let currentId = '';
+      
+      // ⭐ 更新閱讀進度條
+      const scrollTop = pane.scrollTop;
+      const scrollHeight = pane.scrollHeight - pane.clientHeight;
+      const progress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+      document.getElementById('wiki-progress').style.width = progress + '%';
+
       sections.forEach(section => { if (section.getBoundingClientRect().top - paneRect.top <= 250) currentId = section.id; });
       if (Math.abs(pane.scrollHeight - pane.scrollTop - pane.clientHeight) <= 10 && sections.length > 0) currentId = sections[sections.length - 1].id;
       if (currentId) {
@@ -190,83 +245,60 @@
       }
     }
 
-    // ⭐ 防彈載入系統：捕捉所有崩潰錯誤
     async function loadEpisodes() {
       try {
-        // 1. 檢查 config.js 是否有載入
-        if (typeof EPISODES === 'undefined') {
-          showFatalError("找不到 config.js 名單檔！", "請確定你已經上傳了 config.js 檔案，或者 GitHub Actions 機器人是否成功執行。");
-          return;
-        }
+        if (typeof EPISODES === 'undefined') { showFatalError("找不到 config.js", "請確定你已經上傳了 config.js 檔案。"); return; }
 
         let loadedCount = 0;
         for (let date of EPISODES) {
           try {
             const res = await fetch(`data/${date}.html`);
-            if (!res.ok) continue; // 如果找不到這個日期的檔案，就跳過繼續下一個
+            if (!res.ok) continue; 
             const html = await res.text();
             const doc = new DOMParser().parseFromString(html, 'text/html');
             
-            // 2. 嚴格檢查這個 html 檔案裡面是不是有我們需要的 <template> 標籤
             const meta = doc.getElementById('episode-meta');
             const tplChapters = doc.getElementById('tpl-chapters');
             const tplCards = doc.getElementById('tpl-cards');
             const tplWiki = doc.getElementById('tpl-wiki');
             const tplMindmap = doc.getElementById('tpl-mindmap');
 
-            if (!meta || !tplChapters || !tplCards || !tplWiki || !tplMindmap) {
-              console.warn(`[警告] 檔案 data/${date}.html 缺少必要的 template 標籤，已跳過。`);
-              continue;
-            }
+            if (!meta || !tplChapters || !tplCards || !tplWiki || !tplMindmap) continue;
 
             const title = meta.getAttribute('data-title') || '未命名章節';
             const count = meta.getAttribute('data-count') || '0';
 
-            // 注入左側選單
             document.getElementById('menu-cards').insertAdjacentHTML('beforeend', `<div class="menu-item sort-item" data-sort="${date}" onclick="switchDate('${date}', this, 'cards')"><span>📅 ${date.substring(0,2)} / ${date.substring(2,4)}</span><span class="menu-badge">${count}張</span></div>`);
             document.getElementById('menu-wiki').insertAdjacentHTML('beforeend', `<div class="wiki-group sort-item" data-sort="${date}" id="wiki-group-${date}"><div class="wiki-date-item" onclick="switchDate('${date}', this.parentElement, 'wiki')"><span>📅 ${date.substring(0,2)} / ${date.substring(2,4)} 目錄</span><span>▾</span></div><div class="wiki-chapters">${tplChapters.innerHTML}</div></div>`);
             document.getElementById('menu-mindmap').insertAdjacentHTML('beforeend', `<div class="menu-item sort-item" data-sort="${date}" onclick="switchDate('${date}', this, 'mindmap')"><span>📅 ${date.substring(0,2)} / ${date.substring(2,4)} 架構</span><span class="menu-badge">全局</span></div>`);
 
-            // 注入右側內容
             document.getElementById('view-cards').insertAdjacentHTML('beforeend', `<div id="cards-${date}" class="cards-pane" data-title="${title}">${tplCards.innerHTML}</div>`);
             document.getElementById('view-wiki').insertAdjacentHTML('beforeend', `<div id="wiki-${date}" class="wiki-pane" data-title="[百科閱讀] ${title}"><div class="article-container">${tplWiki.innerHTML}</div></div>`);
             document.getElementById(`wiki-${date}`).addEventListener('scroll', handleWikiScroll);
             document.getElementById('view-mindmap').insertAdjacentHTML('beforeend', `<div id="mindmap-${date}" class="mindmap-pane" data-title="[架構] ${title}">${tplMindmap.innerHTML}</div>`);
             
             loadedCount++;
-          } catch (e) { 
-            console.error(`解析 data/${date}.html 發生錯誤:`, e); 
-          }
+          } catch (e) { console.error(`解析 ${date}.html 錯誤:`, e); }
         }
         
         applySort();
         
         if(loadedCount === 0) {
-          showFatalError("資料夾內沒有文章！", "EPISODES 名單內沒有找到可以成功讀取的 HTML 檔案，請檢查 data/ 目錄。");
+          showFatalError("資料夾內沒有文章！", "EPISODES 名單內沒有找到可以成功讀取的 HTML 檔案。");
           document.getElementById('current-title').innerText = "查無資料庫";
         } else {
-          // 成功載入，平滑隱藏 Loading
           document.getElementById('loading').style.opacity = '0';
           setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
-          
           const firstItem = document.querySelector('#menu-cards .menu-item'); 
           if(firstItem) firstItem.click();
         }
-      } catch (fatalError) {
-        showFatalError("系統發生未知錯誤！", "請按下 F12 開啟開發者工具查看詳細錯誤訊息。");
-        console.error(fatalError);
-      }
+      } catch (fatalError) { showFatalError("系統發生未知錯誤！", "請查看詳細錯誤訊息。"); console.error(fatalError); }
     }
 
-    // 將致命錯誤直接顯示在畫面中間
     function showFatalError(title, desc) {
       document.getElementById('loading-spinner').style.display = 'none';
       const textDiv = document.getElementById('loading-text');
-      textDiv.innerHTML = `
-        <div style="font-size: 50px; margin-bottom: 10px;">⚠️</div>
-        <div style="color: #ff5252; font-weight: bold;">${title}</div>
-        <div style="font-size: 14px; color: #888; margin-top: 10px; max-width: 80%; margin-left: auto; margin-right: auto; line-height: 1.5;">${desc}</div>
-      `;
+      textDiv.innerHTML = `<div style="font-size: 50px; margin-bottom: 10px;">⚠️</div><div style="color: #ff5252; font-weight: bold;">${title}</div><div style="font-size: 14px; color: #888; margin-top: 10px; max-width: 80%; margin-left: auto; margin-right: auto; line-height: 1.5;">${desc}</div>`;
     }
 
     function switchMode(mode) {
@@ -276,9 +308,21 @@
       document.querySelectorAll('.view-container').forEach(view => view.classList.remove('active')); document.getElementById('view-' + mode).classList.add('active');
 
       const statusText = document.getElementById('statusText'); const toolbarBtn = document.getElementById('toolbarBtn');
-      if (mode === 'cards') { statusText.innerText = '模式：預覽與打包'; toolbarBtn.innerText = '⬇️ 打包(ZIP)'; toolbarBtn.onclick = downloadAllCards; toolbarBtn.style.display = 'block'; } 
-      else if (mode === 'wiki') { statusText.innerText = '模式：沉浸式閱讀'; toolbarBtn.style.display = 'none'; } 
-      else { statusText.innerText = '模式：思維導圖'; toolbarBtn.style.display = 'none'; }
+      if (mode === 'cards') { 
+        statusText.innerText = '模式：預覽與打包'; toolbarBtn.innerText = '⬇️ 打包(ZIP)'; toolbarBtn.onclick = downloadAllCards; toolbarBtn.style.display = 'block'; 
+        document.getElementById('progress-container').classList.remove('active');
+      } 
+      else if (mode === 'wiki') { 
+        statusText.innerText = '模式：沉浸式閱讀'; toolbarBtn.style.display = 'none'; 
+        document.getElementById('progress-container').classList.add('active');
+        // 切換時強制觸發一次滾動事件來更新進度條
+        const activeWiki = document.querySelector('.wiki-pane.active');
+        if(activeWiki) activeWiki.dispatchEvent(new Event('scroll'));
+      } 
+      else { 
+        statusText.innerText = '模式：思維導圖'; toolbarBtn.style.display = 'none'; 
+        document.getElementById('progress-container').classList.remove('active');
+      }
       if(window.innerWidth <= 768 && document.querySelector('.sidebar').classList.contains('open')) toggleSidebar();
       const activePane = document.querySelector('#view-' + mode + ' > .active'); if(activePane) document.getElementById('current-title').innerText = activePane.getAttribute('data-title');
     }
@@ -291,6 +335,9 @@
       for(let i=0; i<viewContainer.children.length; i++) viewContainer.children[i].classList.remove('active');
       const targetPane = document.getElementById(mode + '-' + dateId);
       if(targetPane) { targetPane.classList.add('active'); document.getElementById('current-title').innerText = targetPane.getAttribute('data-title'); }
+      
+      // 切換日期時重置進度條
+      if(mode === 'wiki' && targetPane) targetPane.dispatchEvent(new Event('scroll'));
       if(window.innerWidth <= 768 && document.querySelector('.sidebar').classList.contains('open')) toggleSidebar();
     }
 
@@ -325,7 +372,4 @@
       } else { btn.disabled = false; }
     }
 
-    window.addEventListener('DOMContentLoaded', loadEpisodes);
-  </script>
-</body>
-</html>
+    window.addEve

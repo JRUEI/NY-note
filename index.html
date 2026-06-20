@@ -6,28 +6,18 @@
   <title>NY-note 全方位知識庫</title>
   <style>
     /* ----------------------------------
-       全域變數與防跑版設定 (終極防彈版)
+       全域變數與防跑版設定
        ---------------------------------- */
     :root { 
-      --base-scale: 0.35;       /* JS 動態計算，解決手機撐破螢幕問題 */
+      --base-scale: 0.35;       
       --zoom-factor: 1;         
       --wiki-font-factor: 1;    
     }
-    
     *, *::before, *::after { box-sizing: border-box; }
-    
-    /* 鎖死手機視窗，防止上下亂彈與字體膨脹 Bug */
-    html, body { 
-      margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; 
-      background-color: #1a1a1a; color: #EBEBEB; 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Microsoft JhengHei", sans-serif; 
-      -webkit-text-size-adjust: 100%; text-size-adjust: 100%; 
-      position: fixed; inset: 0; 
-    }
-    
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #1a1a1a; color: #EBEBEB; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Microsoft JhengHei", sans-serif; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; position: fixed; inset: 0; }
     #app-container { display: flex; width: 100%; height: 100%; flex-direction: row; }
     
-    /* --- 左側邊欄 --- */
+    /* 左側邊欄 */
     .sidebar { width: 320px; max-width: 85vw; background: #111111; display: flex; flex-direction: column; border-right: 1px solid #2A2A2A; box-shadow: 2px 0 15px rgba(0,0,0,0.5); z-index: 100; flex-shrink: 0; height: 100%; }
     .sidebar-header { padding: 30px 20px 15px 20px; border-bottom: 1px solid #2A2A2A; display: flex; flex-direction: column; gap: 15px; flex-shrink: 0; }
     .header-top { display: flex; justify-content: space-between; align-items: center; }
@@ -46,7 +36,6 @@
     .menu-item.active { background: rgba(232,201,122,0.1); color: #E8C97A; border-left: 4px solid #E8C97A; font-weight: bold; }
     .menu-badge { background: #333; color: #aaa; font-size: 12px; padding: 2px 8px; border-radius: 12px; }
     .menu-item.active .menu-badge { background: #E8C97A; color: #111; }
-    
     .wiki-group { border-bottom: 1px solid #222; }
     .wiki-date-item { padding: 14px 24px; cursor: pointer; color: #E8C97A; font-weight: bold; font-size: 16px; background: rgba(20,20,20,0.5); display: flex; justify-content: space-between; }
     .wiki-chapters { display: none; padding: 8px 0; background: #0a0a0a; }
@@ -57,31 +46,26 @@
     .chapter-link.active-chapter { color: #E8C97A; }
     .chapter-link.active-chapter::before { content: "▸"; color: #E8C97A; font-size: 14px; top: 10px; left: 22px; }
 
-    /* --- 主內容區與工具列 --- */
+    /* 主內容區與工具列 */
     .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #1a1a1a; position: relative; height: 100%; min-height: 0; }
     .toolbar { background: rgba(20,20,20,0.95); padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2A2A2A; z-index: 50; flex-shrink: 0; width: 100%; }
     .toolbar-left { display: flex; align-items: center; gap: 15px; overflow: hidden; }
     .hamburger { display: none; font-size: 24px; background: none; border: none; color: #E8C97A; cursor: pointer; padding: 0; }
     .toolbar h3 { margin: 0; font-size: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .action-btn { background: #E8C97A; color: #111; border: none; padding: 10px 24px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
-    
-    /* 百科閱讀進度條 */
     .progress-container { width: 100%; height: 3px; background: #222; display: none; position: relative; z-index: 49; flex-shrink: 0; }
     .progress-container.active { display: block; }
     .progress-bar { height: 100%; width: 0%; background: #E8C97A; transition: width 0.1s ease-out; box-shadow: 0 0 10px rgba(232,201,122,0.5); }
-
-    /* 懸浮縮放控制面板 */
     .zoom-controls { position: fixed; bottom: 40px; right: 40px; background: rgba(20,20,20,0.9); border: 1px solid #333; border-radius: 12px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; z-index: 999; box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(10px); }
     .zoom-controls button { background: #2a2a2a; color: #E8C97A; border: 1px solid #444; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; border: none; }
     .zoom-controls button:hover { background: #E8C97A; color: #111; border-color: #E8C97A; }
     .zoom-controls span { color: #EBEBEB; font-size: 15px; min-width: 65px; text-align: center; font-weight: bold; font-family: monospace; }
     #zoom-reset { width: auto; padding: 0 16px; font-size: 14px; }
 
-    /* 視圖區塊外框 */
     .view-container { display: none; flex: 1; position: relative; width: 100%; min-height: 0; }
     .view-container.active { display: block; } 
     
-    /* 🖼️ 圖卡區 (電腦版) */
+    /* ⭐ 🖼️ 圖卡區 (電腦版完美修復版) */
     .cards-pane { 
       display: none; position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; 
       padding: 60px 20px; flex-direction: column; align-items: center; gap: 40px; 
@@ -89,16 +73,16 @@
     }
     .cards-pane.active { display: flex; }
     .card-wrapper { 
+      /* 外框真實體積，移除負邊距，讓元素自然排版 */
       width: calc(1080px * var(--base-scale) * var(--zoom-factor)); 
       height: calc(1920px * var(--base-scale) * var(--zoom-factor)); 
-      margin-bottom: calc(-1920px + (1920px * var(--base-scale) * var(--zoom-factor)));
       flex-shrink: 0; position: relative; transition: all 0.2s ease; 
     }
     .card-wrapper > div { 
+      /* 內部巨型卡片縮小，並絕對定位在外框左上角 */
       transform: scale(calc(var(--base-scale) * var(--zoom-factor))); 
       transform-origin: top left !important; box-shadow: 0 40px 100px rgba(0,0,0,0.8); 
       position: absolute; top: 0; left: 0; border-radius: 20px; 
-      /* ⭐ 絕對鎖死卡片真實尺寸 */
       width: 1080px !important; height: 1920px !important; overflow: hidden !important; 
     }
     
@@ -134,7 +118,7 @@
     .mm-leaf:hover { border-color: #E8C97A; color: #fff; transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.6); }
 
     /* ----------------------------------
-       手機版適配 (RWD) - 終極防護
+       手機版適配 (RWD)
        ---------------------------------- */
     .sidebar-overlay { display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.6); z-index: 90; backdrop-filter: blur(2px); }
     .sidebar-overlay.active { display: block; }
@@ -153,15 +137,13 @@
       .zoom-controls button { width: 30px; height: 30px; font-size: 16px; }
       .zoom-controls span { font-size: 13px; min-width: 50px; }
 
-      /* ⭐ 手機版黃金比例圖卡輪播 */
       .cards-pane { 
         flex-direction: row; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; 
-        padding: 20px 15vw; gap: 20px; justify-content: flex-start;
+        padding: 20px 17.5vw; gap: 20px; justify-content: flex-start;
       }
       .card-wrapper { margin-bottom: 0 !important; scroll-snap-align: center; }
 
-      /* 手機版百科防破版 */
-      .article-container { padding: 20px 20px 80px 20px; }
+      .article-container { padding: 20px 20px 80px 20px; font-size: calc(16px * var(--wiki-font-factor)); }
       .article-container h1 { font-size: calc(32px * var(--wiki-font-factor)); }
       .article-section h2 { font-size: calc(24px * var(--wiki-font-factor)); }
       .article-section blockquote { margin: 30px 0 30px 16px; padding: 16px 20px; font-size: calc(18px * var(--wiki-font-factor)); }
@@ -173,7 +155,6 @@
     .loader-spinner { width: 50px; height: 50px; border: 5px solid #333; border-top-color: #E8C97A; border-radius: 50%; animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
-  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -181,7 +162,6 @@
 <body>
 
   <div id="app-container">
-    <!-- 載入畫面 -->
     <div id="loading">
       <div class="loader-spinner" id="loading-spinner"></div>
       <div id="loading-text">NY-note 啟動中...</div>
@@ -189,7 +169,6 @@
     
     <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-    <!-- 左側邊欄 -->
     <div class="sidebar">
       <div class="sidebar-header">
         <div class="header-top">
@@ -207,7 +186,6 @@
       <div id="menu-mindmap" class="menu-container"></div>
     </div>
 
-    <!-- 右側主要內容區 -->
     <div class="main-content">
       <div class="toolbar">
         <div class="toolbar-left">
@@ -238,12 +216,10 @@
   </div>
 
   <script>
-    // ⭐ JS 動態計算基準縮放比例 (防破版核心)
     function updateBaseScale() {
       let base = 0.35; 
       if (window.innerWidth <= 768) {
-        // 手機版：卡片寬度為螢幕的 70vw。精準換算縮放比例
-        base = (window.innerWidth * 0.70) / 1080;
+        base = (window.innerWidth * 0.65) / 1080;
       }
       document.documentElement.style.setProperty('--base-scale', base);
     }
@@ -281,19 +257,16 @@
       }
     }
 
-    // ⭐ 致命錯誤顯示器
     function showFatalError(title, desc) {
       const spinner = document.getElementById('loading-spinner'); if (spinner) spinner.style.display = 'none';
       const textDiv = document.getElementById('loading-text');
       if (textDiv) textDiv.innerHTML = `<div style="font-size: 50px; margin-bottom: 10px;">⚠️</div><div style="color: #ff5252; font-weight: bold;">${title}</div><div style="font-size: 14px; color: #888; margin-top: 10px; max-width: 80%; margin-left: auto; margin-right: auto; line-height: 1.5; word-break: break-all;">${desc}</div>`;
     }
 
-    // ⭐ 快取殺手引擎 (Cache Buster)
     async function bootSystem() {
-      const ts = new Date().getTime(); // 產生毫秒級亂數
+      const ts = new Date().getTime(); 
       
       try {
-        // 1. 強制向伺服器要最新的 config.js
         await new Promise((resolve, reject) => {
           const script = document.createElement('script');
           script.src = `config.js?v=${ts}`;
@@ -311,7 +284,6 @@
         return;
       }
       
-      // 2. 開始讀取每篇文章 (一樣加上亂數避開快取)
       let loadedCount = 0;
       for (let date of EPISODES) {
         try {
@@ -419,7 +391,6 @@
       } else { btn.disabled = false; }
     }
 
-    // ⭐ 啟動快取殺手引擎
     bootSystem();
   </script>
 </body>

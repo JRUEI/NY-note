@@ -3,14 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#111111">
   <title>NY-note 全方位知識庫</title>
   <style>
     /* ----------------------------------
        全域變數與防跑版設定
        ---------------------------------- */
-    :root { --base-scale: 0.35; --zoom-factor: 1; --wiki-font-factor: 1; }
+    :root { 
+      --base-scale: 0.35;       /* 輪播模式縮放 */
+      --fs-scale: 1;            /* ⭐ 滿版模式縮放 (由 JS 動態計算避開 Safari Bug) */
+      --zoom-factor: 1;         
+      --wiki-font-factor: 1;    
+    }
+    
     *, *::before, *::after { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #1a1a1a; color: #EBEBEB; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Microsoft JhengHei", sans-serif; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; position: fixed; inset: 0; }
+    
+    html, body { 
+      margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; 
+      background-color: #1a1a1a; color: #EBEBEB; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Microsoft JhengHei", sans-serif; 
+      -webkit-text-size-adjust: 100%; text-size-adjust: 100%; 
+      position: fixed; inset: 0; 
+    }
+    
     #app-container { display: flex; width: 100%; height: 100%; flex-direction: row; }
     
     /* 左側邊欄 */
@@ -32,6 +49,7 @@
     .menu-item.active { background: rgba(232,201,122,0.1); color: #E8C97A; border-left: 4px solid #E8C97A; font-weight: bold; }
     .menu-badge { background: #333; color: #aaa; font-size: 12px; padding: 2px 8px; border-radius: 12px; }
     .menu-item.active .menu-badge { background: #E8C97A; color: #111; }
+    
     .wiki-group { border-bottom: 1px solid #222; }
     .wiki-date-item { padding: 14px 24px; cursor: pointer; color: #E8C97A; font-weight: bold; font-size: 16px; background: rgba(20,20,20,0.5); display: flex; justify-content: space-between; }
     .wiki-chapters { display: none; padding: 8px 0; background: #0a0a0a; }
@@ -49,6 +67,7 @@
     .hamburger { display: none; font-size: 24px; background: none; border: none; color: #E8C97A; cursor: pointer; padding: 0; }
     .toolbar h3 { margin: 0; font-size: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .action-btn { background: #E8C97A; color: #111; border: none; padding: 10px 24px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
+    
     .progress-container { width: 100%; height: 3px; background: #222; display: none; position: relative; z-index: 49; flex-shrink: 0; }
     .progress-container.active { display: block; }
     .progress-bar { height: 100%; width: 0%; background: #E8C97A; transition: width 0.1s ease-out; box-shadow: 0 0 10px rgba(232,201,122,0.5); }
@@ -68,24 +87,24 @@
     .card-wrapper { width: calc(1080px * var(--base-scale) * var(--zoom-factor)); height: calc(1920px * var(--base-scale) * var(--zoom-factor)); flex-shrink: 0; position: relative; transition: all 0.2s ease; cursor: pointer; }
     .card-wrapper > div { transform: scale(calc(var(--base-scale) * var(--zoom-factor))); transform-origin: top left !important; box-shadow: 0 40px 100px rgba(0,0,0,0.8); position: absolute; top: 0; left: 0; border-radius: 20px; width: 1080px !important; height: 1920px !important; overflow: hidden !important; pointer-events: none; }
     
-    /* ⭐ 🖼️ 圖卡區 (滿版沉浸模式 - 終極防擠壓版) */
+    /* ⭐ 🖼️ 圖卡區 (滿版沉浸模式 - JS 變數防護版) */
     .cards-pane.fullscreen-mode {
       position: fixed !important; inset: 0 !important; z-index: 99999 !important; background: #000 !important;
       padding: 0 !important; gap: 0 !important; flex-direction: row !important;
       overflow-x: auto !important; overflow-y: hidden !important; scroll-snap-type: x mandatory !important;
     }
     .cards-pane.fullscreen-mode .card-wrapper {
-      width: 100vw !important; height: 100vh !important; height: 100dvh !important;
+      width: 100vw !important; height: 100% !important;
       margin: 0 !important; border-radius: 0 !important;
       position: relative !important; flex-shrink: 0 !important;
       scroll-snap-align: center !important;
     }
     .cards-pane.fullscreen-mode .card-wrapper > div {
-      /* 完全拋棄相對定位，使用絕對置中加上等比例縮放 */
+      /* ⭐ 透過 JS 計算好的 --fs-scale，避開所有瀏覽器的 Bug */
       position: absolute !important;
       top: 50% !important; left: 50% !important;
       margin-top: -960px !important; margin-left: -540px !important;
-      transform: scale(min(calc(100vw / 1080), calc(100dvh / 1920))) !important;
+      transform: scale(var(--fs-scale)) !important;
       transform-origin: center center !important;
       box-shadow: none !important; border-radius: 20px !important;
     }
@@ -127,9 +146,12 @@
     .mm-leaf { background: #111; border: 1px solid #333; color: #bbb; font-size: 15px; transition: 0.2s; }
     .mm-leaf:hover { border-color: #E8C97A; color: #fff; transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.6); }
 
-    /* 手機版適配 */
+    /* ----------------------------------
+       手機版適配 (RWD)
+       ---------------------------------- */
     .sidebar-overlay { display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.6); z-index: 90; backdrop-filter: blur(2px); }
     .sidebar-overlay.active { display: block; }
+    
     @media (max-width: 768px) {
       .hamburger { display: block; }
       .sidebar { position: absolute; left: -320px; height: 100%; transition: left 0.3s ease; }
@@ -141,8 +163,10 @@
       .zoom-controls { bottom: 20px; right: 20px; padding: 6px 10px; gap: 5px; }
       .zoom-controls button { width: 30px; height: 30px; font-size: 16px; }
       .zoom-controls span { font-size: 13px; min-width: 50px; }
-      
+
+      /* 手機版原生輪播 */
       .cards-pane { flex-direction: row; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; padding: 20px 17.5vw; gap: 20px; justify-content: flex-start; }
+      .cards-pane::-webkit-scrollbar { display: none; }
       .card-wrapper { margin-bottom: 0 !important; scroll-snap-align: center; }
 
       .article-container { padding: 20px 20px 80px 20px; }
@@ -212,11 +236,22 @@
   </div>
 
   <script>
+    // ⭐ JS 動態計算基準縮放比例 (防破版核心)
     function updateBaseScale() {
       let base = 0.35; 
-      if (window.innerWidth <= 768) { base = (window.innerWidth * 0.65) / 1080; }
+      let fsScale = 1;
+      
+      // 計算手機與電腦的滿版縮放比例 (保證不被 Safari 裁切)
+      fsScale = Math.min(window.innerWidth / 1080, window.innerHeight / 1920) * 0.95; 
+      
+      if (window.innerWidth <= 768) { 
+        base = (window.innerWidth * 0.65) / 1080; 
+      }
+      
       document.documentElement.style.setProperty('--base-scale', base);
+      document.documentElement.style.setProperty('--fs-scale', fsScale);
     }
+    
     window.addEventListener('resize', updateBaseScale);
     updateBaseScale();
 
@@ -227,6 +262,8 @@
       if (cardWrapper) {
         const pane = cardWrapper.closest('.cards-pane');
         pane.classList.toggle('fullscreen-mode');
+        // 重新計算確保滿版比例正確
+        updateBaseScale();
         setTimeout(() => { cardWrapper.scrollIntoView({ behavior: 'instant', inline: 'center', block: 'center' }); }, 10);
       }
     });
@@ -332,30 +369,4 @@
 
     async function downloadAllCards() {
       const btn = document.getElementById('toolbarBtn'); btn.disabled = true;
-      const cardElements = document.querySelectorAll('.cards-pane.active .card-wrapper > div[id^="card-"]');
-      if (cardElements.length === 0) { alert("找不到卡片！"); btn.disabled = false; return; }
-      const zip = new JSZip(); let successCount = 0;
-      
-      document.documentElement.style.setProperty('--base-scale', 1);
-      document.documentElement.style.setProperty('--zoom-factor', 1);
-      
-      for (let i = 0; i < cardElements.length; i++) {
-        const node = cardElements[i]; node.scrollIntoView({ behavior: 'instant', block: 'center' }); await new Promise(resolve => setTimeout(resolve, 200)); 
-        try {
-          const dataUrl = await htmlToImage.toPng(node, { pixelRatio: 1, quality: 1.0, style: { transform: 'scale(1)', transformOrigin: 'top left' }, cacheBust: true });
-          zip.file(`Info-${i+1}.png`, dataUrl.split(',')[1], {base64: true}); successCount++;
-        } catch (error) { console.error(`失敗:`, error); }
-      }
-      
-      updateBaseScale();
-      document.documentElement.style.setProperty('--zoom-factor', viewZoom);
-      
-      if (successCount > 0) {
-        zip.generateAsync({type:"blob"}).then(function(content) { saveAs(content, `Cards_${document.querySelector('.cards-pane.active').id.replace('cards-','')}.zip`); btn.disabled = false; });
-      } else { btn.disabled = false; }
-    }
-
-    bootSystem();
-  </script>
-</body>
-</html>
+      const cardElements = document.querySelectorAll('.cards-pane.active .card-wrapper > di

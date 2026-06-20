@@ -2,8 +2,13 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
+  <!-- ⭐ 支援手機 PWA 獨立 App 模式 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#111111">
   <title>NY-note 全方位知識庫</title>
+  
   <style>
     /* ----------------------------------
        全域變數與防跑版設定
@@ -53,6 +58,7 @@
     .hamburger { display: none; font-size: 24px; background: none; border: none; color: #E8C97A; cursor: pointer; padding: 0; }
     .toolbar h3 { margin: 0; font-size: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .action-btn { background: #E8C97A; color: #111; border: none; padding: 10px 24px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
+    
     .progress-container { width: 100%; height: 3px; background: #222; display: none; position: relative; z-index: 49; flex-shrink: 0; }
     .progress-container.active { display: block; }
     .progress-bar { height: 100%; width: 0%; background: #E8C97A; transition: width 0.1s ease-out; box-shadow: 0 0 10px rgba(232,201,122,0.5); }
@@ -65,27 +71,39 @@
     .view-container { display: none; flex: 1; position: relative; width: 100%; min-height: 0; }
     .view-container.active { display: block; } 
     
-    /* ⭐ 🖼️ 圖卡區 (電腦版完美修復版) */
-    .cards-pane { 
-      display: none; position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; 
-      padding: 60px 20px; flex-direction: column; align-items: center; gap: 40px; 
-      -webkit-overflow-scrolling: touch; 
-    }
+    /* ⭐ 🖼️ 圖卡區 (一般模式) */
+    .cards-pane { display: none; position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; padding: 60px 20px; flex-direction: column; align-items: center; gap: 40px; -webkit-overflow-scrolling: touch; }
     .cards-pane.active { display: flex; }
-    .card-wrapper { 
-      /* 外框真實體積，移除負邊距，讓元素自然排版 */
-      width: calc(1080px * var(--base-scale) * var(--zoom-factor)); 
-      height: calc(1920px * var(--base-scale) * var(--zoom-factor)); 
-      flex-shrink: 0; position: relative; transition: all 0.2s ease; 
-    }
-    .card-wrapper > div { 
-      /* 內部巨型卡片縮小，並絕對定位在外框左上角 */
-      transform: scale(calc(var(--base-scale) * var(--zoom-factor))); 
-      transform-origin: top left !important; box-shadow: 0 40px 100px rgba(0,0,0,0.8); 
-      position: absolute; top: 0; left: 0; border-radius: 20px; 
-      width: 1080px !important; height: 1920px !important; overflow: hidden !important; 
-    }
+    .card-wrapper { width: calc(1080px * var(--base-scale) * var(--zoom-factor)); height: calc(1920px * var(--base-scale) * var(--zoom-factor)); flex-shrink: 0; position: relative; transition: all 0.2s ease; cursor: pointer; }
+    .card-wrapper > div { transform: scale(calc(var(--base-scale) * var(--zoom-factor))); transform-origin: top left !important; box-shadow: 0 40px 100px rgba(0,0,0,0.8); position: absolute; top: 0; left: 0; border-radius: 20px; width: 1080px !important; height: 1920px !important; overflow: hidden !important; pointer-events: none; }
     
+    /* ⭐ 🖼️ 圖卡區 (滿版沉浸模式 - Click to Fullscreen) */
+    .cards-pane.fullscreen-mode {
+      position: fixed !important; inset: 0 !important; z-index: 99999 !important; background: #000 !important;
+      padding: 0 !important; gap: 0 !important; flex-direction: row !important;
+      overflow-x: auto !important; overflow-y: hidden !important; scroll-snap-type: x mandatory !important;
+    }
+    .cards-pane.fullscreen-mode .card-wrapper {
+      width: 100vw !important; height: 100vh !important; height: 100dvh !important;
+      margin: 0 !important; border-radius: 0 !important;
+      display: flex !important; align-items: center !important; justify-content: center !important;
+      scroll-snap-align: center !important;
+    }
+    .cards-pane.fullscreen-mode .card-wrapper > div {
+      /* 精準計算手機寬高比，保證卡片100%可見 */
+      transform: scale(min(calc(100vw / 1080), calc(100dvh / 1920))) !important;
+      transform-origin: center center !important;
+      position: relative !important; top: auto !important; left: auto !important;
+      box-shadow: none !important; border-radius: 20px !important;
+    }
+    /* 滿版模式專屬提示浮水印 */
+    .cards-pane.fullscreen-mode::after {
+      content: '👆 再次點擊退出滿版'; position: fixed; top: 40px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.6); color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 14px;
+      z-index: 100000; pointer-events: none; animation: fadeOut 3s forwards;
+    }
+    @keyframes fadeOut { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+
     /* 📖 百科區 */
     .wiki-pane { display: none; position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
     .wiki-pane.active { display: block; }
@@ -127,23 +145,20 @@
       .hamburger { display: block; }
       .sidebar { position: absolute; left: -320px; height: 100%; transition: left 0.3s ease; }
       .sidebar.open { left: 0; }
-      
       .toolbar { padding: 15px 20px; }
       .toolbar h3 { font-size: 16px; max-width: 140px; }
       #statusText { display: none; }
       .action-btn { padding: 8px 12px; font-size: 13px; }
-      
       .zoom-controls { bottom: 20px; right: 20px; padding: 6px 10px; gap: 5px; }
       .zoom-controls button { width: 30px; height: 30px; font-size: 16px; }
       .zoom-controls span { font-size: 13px; min-width: 50px; }
 
-      .cards-pane { 
-        flex-direction: row; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; 
-        padding: 20px 17.5vw; gap: 20px; justify-content: flex-start;
-      }
+      /* 手機版原生輪播 */
+      .cards-pane { flex-direction: row; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; padding: 20px 17.5vw; gap: 20px; justify-content: flex-start; }
+      .cards-pane::-webkit-scrollbar { display: none; }
       .card-wrapper { margin-bottom: 0 !important; scroll-snap-align: center; }
 
-      .article-container { padding: 20px 20px 80px 20px; font-size: calc(16px * var(--wiki-font-factor)); }
+      .article-container { padding: 20px 20px 80px 20px; }
       .article-container h1 { font-size: calc(32px * var(--wiki-font-factor)); }
       .article-section h2 { font-size: calc(24px * var(--wiki-font-factor)); }
       .article-section blockquote { margin: 30px 0 30px 16px; padding: 16px 20px; font-size: calc(18px * var(--wiki-font-factor)); }
@@ -162,11 +177,7 @@
 <body>
 
   <div id="app-container">
-    <div id="loading">
-      <div class="loader-spinner" id="loading-spinner"></div>
-      <div id="loading-text">NY-note 啟動中...</div>
-    </div>
-    
+    <div id="loading"><div class="loader-spinner" id="loading-spinner"></div><div id="loading-text">NY-note 啟動中...</div></div>
     <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
     <div class="sidebar">
@@ -198,9 +209,7 @@
         <button class="action-btn" id="toolbarBtn" onclick="downloadAllCards()">⬇️ 一鍵打包</button>
       </div>
       
-      <div class="progress-container" id="progress-container">
-        <div class="progress-bar" id="wiki-progress"></div>
-      </div>
+      <div class="progress-container" id="progress-container"><div class="progress-bar" id="wiki-progress"></div></div>
 
       <div id="view-cards" class="view-container active"></div>
       <div id="view-wiki" class="view-container"></div>
@@ -216,39 +225,44 @@
   </div>
 
   <script>
+    // ⭐ JS 動態計算基準縮放比例
     function updateBaseScale() {
       let base = 0.35; 
-      if (window.innerWidth <= 768) {
-        base = (window.innerWidth * 0.65) / 1080;
-      }
+      if (window.innerWidth <= 768) { base = (window.innerWidth * 0.65) / 1080; }
       document.documentElement.style.setProperty('--base-scale', base);
     }
     window.addEventListener('resize', updateBaseScale);
     updateBaseScale();
 
+    // ⭐ 滿版圖卡切換邏輯 (Click to Fullscreen)
+    document.querySelector('.main-content').addEventListener('click', function(e) {
+      if (currentAppMode !== 'cards') return;
+      // 找到被點擊的卡片外框
+      const cardWrapper = e.target.closest('.card-wrapper');
+      if (cardWrapper) {
+        const pane = cardWrapper.closest('.cards-pane');
+        // 切換滿版模式 Class
+        pane.classList.toggle('fullscreen-mode');
+        // 自動把點擊的那張卡片精準置中
+        setTimeout(() => {
+          cardWrapper.scrollIntoView({ behavior: 'instant', inline: 'center', block: 'center' });
+        }, 10);
+      }
+    });
+
     let currentAppMode = 'cards'; 
-    let viewZoom = 1;             
-    let fontZoom = 1;             
+    let viewZoom = 1; let fontZoom = 1;             
 
     function toggleSidebar() { document.querySelector('.sidebar').classList.toggle('open'); document.querySelector('.sidebar-overlay').classList.toggle('active'); }
-    
-    function changeZoom(delta) { 
-      if (currentAppMode === 'wiki') { fontZoom += delta; if (fontZoom < 0.5) fontZoom = 0.5; if (fontZoom > 2.5) fontZoom = 2.5; } 
-      else { viewZoom += delta; if (viewZoom < 0.3) viewZoom = 0.3; if (viewZoom > 3) viewZoom = 3; } 
-      applyZoomDisplay(); 
-    }
+    function changeZoom(delta) { if (currentAppMode === 'wiki') { fontZoom += delta; if (fontZoom < 0.5) fontZoom = 0.5; if (fontZoom > 2.5) fontZoom = 2.5; } else { viewZoom += delta; if (viewZoom < 0.3) viewZoom = 0.3; if (viewZoom > 3) viewZoom = 3; } applyZoomDisplay(); }
     function resetZoom() { if (currentAppMode === 'wiki') fontZoom = 1; else viewZoom = 1; applyZoomDisplay(); }
-    function applyZoomDisplay() { 
-      if (currentAppMode === 'wiki') { document.getElementById('zoom-level').innerText = Math.round(fontZoom * 100) + '%(字)'; document.documentElement.style.setProperty('--wiki-font-factor', fontZoom); } 
-      else { document.getElementById('zoom-level').innerText = Math.round(viewZoom * 100) + '%'; document.documentElement.style.setProperty('--zoom-factor', viewZoom); } 
-    }
+    function applyZoomDisplay() { if (currentAppMode === 'wiki') { document.getElementById('zoom-level').innerText = Math.round(fontZoom * 100) + '%(字)'; document.documentElement.style.setProperty('--wiki-font-factor', fontZoom); } else { document.getElementById('zoom-level').innerText = Math.round(viewZoom * 100) + '%'; document.documentElement.style.setProperty('--zoom-factor', viewZoom); } }
 
     function handleWikiScroll(e) {
       const pane = e.target; const paneRect = pane.getBoundingClientRect(); const sections = pane.querySelectorAll('.article-section'); let currentId = '';
       const scrollTop = pane.scrollTop; const scrollHeight = pane.scrollHeight - pane.clientHeight;
       const progress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
       document.getElementById('wiki-progress').style.width = progress + '%';
-
       sections.forEach(section => { if (section.getBoundingClientRect().top - paneRect.top <= 250) currentId = section.id; });
       if (Math.abs(pane.scrollHeight - pane.scrollTop - pane.clientHeight) <= 10 && sections.length > 0) currentId = sections[sections.length - 1].id;
       if (currentId) {
@@ -265,67 +279,37 @@
 
     async function bootSystem() {
       const ts = new Date().getTime(); 
-      
       try {
         await new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = `config.js?v=${ts}`;
-          script.onload = resolve;
-          script.onerror = () => reject(new Error('無法載入 config.js'));
-          document.head.appendChild(script);
+          const script = document.createElement('script'); script.src = `config.js?v=${ts}`; script.onload = resolve; script.onerror = () => reject(new Error('無法載入 config.js')); document.head.appendChild(script);
         });
-      } catch (err) {
-        showFatalError("找不到名單設定檔！", "請檢查 GitHub 上是否已經建立 config.js 檔案。");
-        return;
-      }
-      
-      if (typeof EPISODES === 'undefined') {
-        showFatalError("config.js 格式錯誤", "檔案內沒有正確定義 EPISODES 陣列。");
-        return;
-      }
+      } catch (err) { showFatalError("找不到名單設定檔！", "請檢查 GitHub 上是否已經建立 config.js 檔案。"); return; }
+      if (typeof EPISODES === 'undefined') { showFatalError("config.js 格式錯誤", "檔案內沒有正確定義 EPISODES 陣列。"); return; }
       
       let loadedCount = 0;
       for (let date of EPISODES) {
         try {
           const res = await fetch(`data/${date}.html?v=${ts}`);
           if (!res.ok) { console.warn(`找不到 data/${date}.html`); continue; }
-          const html = await res.text();
-          const doc = new DOMParser().parseFromString(html, 'text/html');
-          
-          const meta = doc.getElementById('episode-meta');
-          const tplChapters = doc.getElementById('tpl-chapters');
-          const tplCards = doc.getElementById('tpl-cards');
-          const tplWiki = doc.getElementById('tpl-wiki');
-          const tplMindmap = doc.getElementById('tpl-mindmap');
-
+          const html = await res.text(); const doc = new DOMParser().parseFromString(html, 'text/html');
+          const meta = doc.getElementById('episode-meta'); const tplChapters = doc.getElementById('tpl-chapters'); const tplCards = doc.getElementById('tpl-cards'); const tplWiki = doc.getElementById('tpl-wiki'); const tplMindmap = doc.getElementById('tpl-mindmap');
           if (!meta || !tplChapters || !tplCards || !tplWiki || !tplMindmap) { console.warn(`檔案 data/${date}.html 缺少必要標籤`); continue; }
-
-          const title = meta.getAttribute('data-title') || '未命名章節';
-          const count = meta.getAttribute('data-count') || '0';
+          const title = meta.getAttribute('data-title') || '未命名章節'; const count = meta.getAttribute('data-count') || '0';
 
           document.getElementById('menu-cards').insertAdjacentHTML('beforeend', `<div class="menu-item sort-item" data-sort="${date}" onclick="switchDate('${date}', this, 'cards')"><span>📅 ${date.substring(0,2)} / ${date.substring(2,4)}</span><span class="menu-badge">${count}張</span></div>`);
           document.getElementById('menu-wiki').insertAdjacentHTML('beforeend', `<div class="wiki-group sort-item" data-sort="${date}" id="wiki-group-${date}"><div class="wiki-date-item" onclick="switchDate('${date}', this.parentElement, 'wiki')"><span>📅 ${date.substring(0,2)} / ${date.substring(2,4)} 目錄</span><span>▾</span></div><div class="wiki-chapters">${tplChapters.innerHTML}</div></div>`);
           document.getElementById('menu-mindmap').insertAdjacentHTML('beforeend', `<div class="menu-item sort-item" data-sort="${date}" onclick="switchDate('${date}', this, 'mindmap')"><span>📅 ${date.substring(0,2)} / ${date.substring(2,4)} 架構</span><span class="menu-badge">全局</span></div>`);
-
           document.getElementById('view-cards').insertAdjacentHTML('beforeend', `<div id="cards-${date}" class="cards-pane" data-title="${title}">${tplCards.innerHTML}</div>`);
           document.getElementById('view-wiki').insertAdjacentHTML('beforeend', `<div id="wiki-${date}" class="wiki-pane" data-title="[百科閱讀] ${title}"><div class="article-container">${tplWiki.innerHTML}</div></div>`);
           document.getElementById(`wiki-${date}`).addEventListener('scroll', handleWikiScroll);
           document.getElementById('view-mindmap').insertAdjacentHTML('beforeend', `<div id="mindmap-${date}" class="mindmap-pane" data-title="[架構] ${title}">${tplMindmap.innerHTML}</div>`);
-          
           loadedCount++;
         } catch (e) { console.error(`解析 data/${date}.html 發生錯誤:`, e); }
       }
-      
       applySort();
       
-      if(loadedCount === 0) {
-        showFatalError("資料夾內沒有對應文章！", `系統讀到了名單，但找不到對應的 HTML 檔案。<br>請確認 data/ 資料夾內有 ${EPISODES[0]}.html 等檔案。`);
-        document.getElementById('current-title').innerText = "查無資料庫";
-      } else {
-        document.getElementById('loading').style.opacity = '0';
-        setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
-        const firstItem = document.querySelector('#menu-cards .menu-item'); if(firstItem) firstItem.click();
-      }
+      if(loadedCount === 0) { showFatalError("資料夾內沒有對應文章！", `系統讀到了名單，但找不到對應的 HTML 檔案。<br>請確認 data/ 資料夾內有檔案。`); document.getElementById('current-title').innerText = "查無資料庫"; } 
+      else { document.getElementById('loading').style.opacity = '0'; setTimeout(() => document.getElementById('loading').style.display = 'none', 500); const firstItem = document.querySelector('#menu-cards .menu-item'); if(firstItem) firstItem.click(); }
     }
 
     function switchMode(mode) {

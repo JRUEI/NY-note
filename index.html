@@ -9,26 +9,25 @@
        全域變數與防跑版設定 (終極防彈版)
        ---------------------------------- */
     :root { 
-      --base-scale: 0.35;       /* 由 JS 動態計算，解決手機 vw 縮放失效問題 */
+      --base-scale: 0.35;       /* JS 動態計算，解決手機撐破螢幕問題 */
       --zoom-factor: 1;         
       --wiki-font-factor: 1;    
     }
     
     *, *::before, *::after { box-sizing: border-box; }
     
-    /* 鎖死手機視窗，防止上下亂彈與高度計算錯誤 */
+    /* 鎖死手機視窗，防止上下亂彈與字體膨脹 Bug */
     html, body { 
       margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; 
       background-color: #1a1a1a; color: #EBEBEB; 
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Microsoft JhengHei", sans-serif; 
-      -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+      -webkit-text-size-adjust: 100%; text-size-adjust: 100%; 
       position: fixed; inset: 0; 
     }
     
-    /* App 主容器 */
     #app-container { display: flex; width: 100%; height: 100%; flex-direction: row; }
     
-    /* 左側邊欄 */
+    /* --- 左側邊欄 --- */
     .sidebar { width: 320px; max-width: 85vw; background: #111111; display: flex; flex-direction: column; border-right: 1px solid #2A2A2A; box-shadow: 2px 0 15px rgba(0,0,0,0.5); z-index: 100; flex-shrink: 0; height: 100%; }
     .sidebar-header { padding: 30px 20px 15px 20px; border-bottom: 1px solid #2A2A2A; display: flex; flex-direction: column; gap: 15px; flex-shrink: 0; }
     .header-top { display: flex; justify-content: space-between; align-items: center; }
@@ -54,11 +53,12 @@
     .wiki-group.active .wiki-chapters { display: block; }
     .chapter-link { display: block; padding: 10px 24px 10px 40px; color: #888; font-size: 14px; text-decoration: none; position: relative; }
     .chapter-link::before { content: "•"; position: absolute; left: 24px; color: #444; font-size: 18px; top: 8px; }
+    .chapter-link:hover { color: #fff; background: #1a1a1a; }
     .chapter-link.active-chapter { color: #E8C97A; }
     .chapter-link.active-chapter::before { content: "▸"; color: #E8C97A; font-size: 14px; top: 10px; left: 22px; }
 
-    /* 主內容區與工具列 */
-    .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #1a1a1a; position: relative; height: 100%; }
+    /* --- 主內容區與工具列 --- */
+    .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #1a1a1a; position: relative; height: 100%; min-height: 0; }
     .toolbar { background: rgba(20,20,20,0.95); padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2A2A2A; z-index: 50; flex-shrink: 0; width: 100%; }
     .toolbar-left { display: flex; align-items: center; gap: 15px; overflow: hidden; }
     .hamburger { display: none; font-size: 24px; background: none; border: none; color: #E8C97A; cursor: pointer; padding: 0; }
@@ -73,14 +73,15 @@
     /* 懸浮縮放控制面板 */
     .zoom-controls { position: fixed; bottom: 40px; right: 40px; background: rgba(20,20,20,0.9); border: 1px solid #333; border-radius: 12px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; z-index: 999; box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(10px); }
     .zoom-controls button { background: #2a2a2a; color: #E8C97A; border: 1px solid #444; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; border: none; }
+    .zoom-controls button:hover { background: #E8C97A; color: #111; border-color: #E8C97A; }
     .zoom-controls span { color: #EBEBEB; font-size: 15px; min-width: 65px; text-align: center; font-weight: bold; font-family: monospace; }
     #zoom-reset { width: auto; padding: 0 16px; font-size: 14px; }
 
     /* 視圖區塊外框 */
-    .view-container { display: none; flex: 1; position: relative; width: 100%; }
-    .view-container.active { display: block; } /* 改用 block 確保絕對定位子層不受影響 */
+    .view-container { display: none; flex: 1; position: relative; width: 100%; min-height: 0; }
+    .view-container.active { display: block; } 
     
-    /* 🖼️ 圖卡區 */
+    /* 🖼️ 圖卡區 (電腦版) */
     .cards-pane { 
       display: none; position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; 
       padding: 60px 20px; flex-direction: column; align-items: center; gap: 40px; 
@@ -97,6 +98,7 @@
       transform: scale(calc(var(--base-scale) * var(--zoom-factor))); 
       transform-origin: top left !important; box-shadow: 0 40px 100px rgba(0,0,0,0.8); 
       position: absolute; top: 0; left: 0; border-radius: 20px; 
+      /* ⭐ 絕對鎖死卡片真實尺寸 */
       width: 1080px !important; height: 1920px !important; overflow: hidden !important; 
     }
     
@@ -132,7 +134,7 @@
     .mm-leaf:hover { border-color: #E8C97A; color: #fff; transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.6); }
 
     /* ----------------------------------
-       手機版適配 (RWD - 終極防跑版機制)
+       手機版適配 (RWD) - 終極防護
        ---------------------------------- */
     .sidebar-overlay { display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.6); z-index: 90; backdrop-filter: blur(2px); }
     .sidebar-overlay.active { display: block; }
@@ -151,14 +153,12 @@
       .zoom-controls button { width: 30px; height: 30px; font-size: 16px; }
       .zoom-controls span { font-size: 13px; min-width: 50px; }
 
-      /* ⭐ 手機版圖卡輪播 */
+      /* ⭐ 手機版黃金比例圖卡輪播 */
       .cards-pane { 
         flex-direction: row; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; 
-        padding: 20px 17.5vw; gap: 20px; justify-content: flex-start;
+        padding: 20px 15vw; gap: 20px; justify-content: flex-start;
       }
-      .card-wrapper { 
-        margin-bottom: 0 !important; scroll-snap-align: center; 
-      }
+      .card-wrapper { margin-bottom: 0 !important; scroll-snap-align: center; }
 
       /* 手機版百科防破版 */
       .article-container { padding: 20px 20px 80px 20px; }
@@ -173,21 +173,23 @@
     .loader-spinner { width: 50px; height: 50px; border: 5px solid #333; border-top-color: #E8C97A; border-radius: 50%; animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
+  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-  <script src="config.js"></script>
 </head>
 <body>
 
   <div id="app-container">
+    <!-- 載入畫面 -->
     <div id="loading">
       <div class="loader-spinner" id="loading-spinner"></div>
-      <div id="loading-text">NY-note 載入中...</div>
+      <div id="loading-text">NY-note 啟動中...</div>
     </div>
     
     <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
+    <!-- 左側邊欄 -->
     <div class="sidebar">
       <div class="sidebar-header">
         <div class="header-top">
@@ -205,6 +207,7 @@
       <div id="menu-mindmap" class="menu-container"></div>
     </div>
 
+    <!-- 右側主要內容區 -->
     <div class="main-content">
       <div class="toolbar">
         <div class="toolbar-left">
@@ -235,19 +238,17 @@
   </div>
 
   <script>
-    // ----------------------------------------------------
     // ⭐ JS 動態計算基準縮放比例 (防破版核心)
-    // ----------------------------------------------------
     function updateBaseScale() {
-      let base = 0.35; // 電腦版預設縮放
+      let base = 0.35; 
       if (window.innerWidth <= 768) {
-        // 手機版：卡片寬度為螢幕的 65vw (0.65)。算出需要把 1080px 縮小到多少
-        base = (window.innerWidth * 0.65) / 1080;
+        // 手機版：卡片寬度為螢幕的 70vw。精準換算縮放比例
+        base = (window.innerWidth * 0.70) / 1080;
       }
       document.documentElement.style.setProperty('--base-scale', base);
     }
     window.addEventListener('resize', updateBaseScale);
-    updateBaseScale(); // 頁面載入時立刻計算一次
+    updateBaseScale();
 
     let currentAppMode = 'cards'; 
     let viewZoom = 1;             
@@ -280,23 +281,146 @@
       }
     }
 
+    // ⭐ 致命錯誤顯示器
     function showFatalError(title, desc) {
       const spinner = document.getElementById('loading-spinner'); if (spinner) spinner.style.display = 'none';
       const textDiv = document.getElementById('loading-text');
-      if (textDiv) textDiv.innerHTML = `<div style="font-size: 50px; margin-bottom: 10px;">⚠️</div><div style="color: #ff5252; font-weight: bold;">${title}</div><div style="font-size: 14px; color: #888; margin-top: 10px; max-width: 80%; margin-left: auto; margin-right: auto; line-height: 1.5;">${desc}</div>`;
+      if (textDiv) textDiv.innerHTML = `<div style="font-size: 50px; margin-bottom: 10px;">⚠️</div><div style="color: #ff5252; font-weight: bold;">${title}</div><div style="font-size: 14px; color: #888; margin-top: 10px; max-width: 80%; margin-left: auto; margin-right: auto; line-height: 1.5; word-break: break-all;">${desc}</div>`;
     }
 
-    async function loadEpisodes() {
+    // ⭐ 快取殺手引擎 (Cache Buster)
+    async function bootSystem() {
+      const ts = new Date().getTime(); // 產生毫秒級亂數
+      
       try {
-        if (typeof EPISODES === 'undefined') { showFatalError("找不到 config.js 名單檔！", "請確認 config.js 是否有上傳到 GitHub，或是快取問題。"); return; }
-        let loadedCount = 0;
-        for (let date of EPISODES) {
-          try {
-            const res = await fetch(`data/${date}.html`);
-            if (!res.ok) { console.warn(`找不到 data/${date}.html`); continue; }
-            const html = await res.text();
-            const doc = new DOMParser().parseFromString(html, 'text/html');
-            
-            const meta = doc.getElementById('episode-meta');
-            const tplChapters = doc.getElementById('tpl-chapters');
-            const tplCards = doc.getE
+        // 1. 強制向伺服器要最新的 config.js
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = `config.js?v=${ts}`;
+          script.onload = resolve;
+          script.onerror = () => reject(new Error('無法載入 config.js'));
+          document.head.appendChild(script);
+        });
+      } catch (err) {
+        showFatalError("找不到名單設定檔！", "請檢查 GitHub 上是否已經建立 config.js 檔案。");
+        return;
+      }
+      
+      if (typeof EPISODES === 'undefined') {
+        showFatalError("config.js 格式錯誤", "檔案內沒有正確定義 EPISODES 陣列。");
+        return;
+      }
+      
+      // 2. 開始讀取每篇文章 (一樣加上亂數避開快取)
+      let loadedCount = 0;
+      for (let date of EPISODES) {
+        try {
+          const res = await fetch(`data/${date}.html?v=${ts}`);
+          if (!res.ok) { console.warn(`找不到 data/${date}.html`); continue; }
+          const html = await res.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+          
+          const meta = doc.getElementById('episode-meta');
+          const tplChapters = doc.getElementById('tpl-chapters');
+          const tplCards = doc.getElementById('tpl-cards');
+          const tplWiki = doc.getElementById('tpl-wiki');
+          const tplMindmap = doc.getElementById('tpl-mindmap');
+
+          if (!meta || !tplChapters || !tplCards || !tplWiki || !tplMindmap) { console.warn(`檔案 data/${date}.html 缺少必要標籤`); continue; }
+
+          const title = meta.getAttribute('data-title') || '未命名章節';
+          const count = meta.getAttribute('data-count') || '0';
+
+          document.getElementById('menu-cards').insertAdjacentHTML('beforeend', `<div class="menu-item sort-item" data-sort="${date}" onclick="switchDate('${date}', this, 'cards')"><span>📅 ${date.substring(0,2)} / ${date.substring(2,4)}</span><span class="menu-badge">${count}張</span></div>`);
+          document.getElementById('menu-wiki').insertAdjacentHTML('beforeend', `<div class="wiki-group sort-item" data-sort="${date}" id="wiki-group-${date}"><div class="wiki-date-item" onclick="switchDate('${date}', this.parentElement, 'wiki')"><span>📅 ${date.substring(0,2)} / ${date.substring(2,4)} 目錄</span><span>▾</span></div><div class="wiki-chapters">${tplChapters.innerHTML}</div></div>`);
+          document.getElementById('menu-mindmap').insertAdjacentHTML('beforeend', `<div class="menu-item sort-item" data-sort="${date}" onclick="switchDate('${date}', this, 'mindmap')"><span>📅 ${date.substring(0,2)} / ${date.substring(2,4)} 架構</span><span class="menu-badge">全局</span></div>`);
+
+          document.getElementById('view-cards').insertAdjacentHTML('beforeend', `<div id="cards-${date}" class="cards-pane" data-title="${title}">${tplCards.innerHTML}</div>`);
+          document.getElementById('view-wiki').insertAdjacentHTML('beforeend', `<div id="wiki-${date}" class="wiki-pane" data-title="[百科閱讀] ${title}"><div class="article-container">${tplWiki.innerHTML}</div></div>`);
+          document.getElementById(`wiki-${date}`).addEventListener('scroll', handleWikiScroll);
+          document.getElementById('view-mindmap').insertAdjacentHTML('beforeend', `<div id="mindmap-${date}" class="mindmap-pane" data-title="[架構] ${title}">${tplMindmap.innerHTML}</div>`);
+          
+          loadedCount++;
+        } catch (e) { console.error(`解析 data/${date}.html 發生錯誤:`, e); }
+      }
+      
+      applySort();
+      
+      if(loadedCount === 0) {
+        showFatalError("資料夾內沒有對應文章！", `系統讀到了名單，但找不到對應的 HTML 檔案。<br>請確認 data/ 資料夾內有 ${EPISODES[0]}.html 等檔案。`);
+        document.getElementById('current-title').innerText = "查無資料庫";
+      } else {
+        document.getElementById('loading').style.opacity = '0';
+        setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
+        const firstItem = document.querySelector('#menu-cards .menu-item'); if(firstItem) firstItem.click();
+      }
+    }
+
+    function switchMode(mode) {
+      currentAppMode = mode; applyZoomDisplay();    
+      document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active')); event.target.classList.add('active');
+      document.querySelectorAll('.menu-container').forEach(menu => menu.classList.remove('active')); document.getElementById('menu-' + mode).classList.add('active');
+      document.querySelectorAll('.view-container').forEach(view => view.classList.remove('active')); document.getElementById('view-' + mode).classList.add('active');
+
+      const statusText = document.getElementById('statusText'); const toolbarBtn = document.getElementById('toolbarBtn');
+      if (mode === 'cards') { statusText.innerText = '模式：預覽與打包'; toolbarBtn.innerText = '⬇️ 打包(ZIP)'; toolbarBtn.onclick = downloadAllCards; toolbarBtn.style.display = 'block'; document.getElementById('progress-container').classList.remove('active'); } 
+      else if (mode === 'wiki') { statusText.innerText = '模式：沉浸式閱讀'; toolbarBtn.style.display = 'none'; document.getElementById('progress-container').classList.add('active'); const activeWiki = document.querySelector('.wiki-pane.active'); if(activeWiki) activeWiki.dispatchEvent(new Event('scroll')); } 
+      else { statusText.innerText = '模式：思維導圖'; toolbarBtn.style.display = 'none'; document.getElementById('progress-container').classList.remove('active'); }
+      if(window.innerWidth <= 768 && document.querySelector('.sidebar').classList.contains('open')) toggleSidebar();
+      const activePane = document.querySelector('#view-' + mode + ' > .active'); if(activePane) document.getElementById('current-title').innerText = activePane.getAttribute('data-title');
+    }
+
+    function switchDate(dateId, element, mode) {
+      if(mode === 'wiki') document.querySelectorAll('#menu-wiki .wiki-group').forEach(el => el.classList.remove('active'));
+      else document.querySelectorAll('#menu-' + mode + ' .menu-item').forEach(el => el.classList.remove('active'));
+      element.classList.add('active');
+      const viewContainer = document.getElementById('view-' + mode);
+      for(let i=0; i<viewContainer.children.length; i++) viewContainer.children[i].classList.remove('active');
+      const targetPane = document.getElementById(mode + '-' + dateId);
+      if(targetPane) { targetPane.classList.add('active'); document.getElementById('current-title').innerText = targetPane.getAttribute('data-title'); }
+      if(mode === 'wiki' && targetPane) targetPane.dispatchEvent(new Event('scroll'));
+      if(window.innerWidth <= 768 && document.querySelector('.sidebar').classList.contains('open')) toggleSidebar();
+    }
+
+    function setActiveChapter(element) { document.querySelectorAll('.chapter-link').forEach(link => link.classList.remove('active-chapter')); element.classList.add('active-chapter'); if(window.innerWidth <= 768 && document.querySelector('.sidebar').classList.contains('open')) toggleSidebar(); }
+
+    let isDescending = true;
+    function toggleSort() { isDescending = !isDescending; document.getElementById('sortBtn').innerText = isDescending ? '降序 🔽' : '升序 🔼'; applySort(); }
+    function applySort() {
+      ['menu-cards', 'menu-wiki', 'menu-mindmap'].forEach(containerId => {
+        const container = document.getElementById(containerId); const items = Array.from(container.querySelectorAll('.sort-item'));
+        items.sort((a, b) => { return isDescending ? parseInt(b.getAttribute('data-sort')) - parseInt(a.getAttribute('data-sort')) : parseInt(a.getAttribute('data-sort')) - parseInt(b.getAttribute('data-sort')); });
+        items.forEach(item => container.appendChild(item));
+      });
+    }
+
+    async function downloadAllCards() {
+      const btn = document.getElementById('toolbarBtn'); btn.disabled = true;
+      const cardElements = document.querySelectorAll('.cards-pane.active .card-wrapper > div[id^="card-"]');
+      if (cardElements.length === 0) { alert("找不到卡片！"); btn.disabled = false; return; }
+      const zip = new JSZip(); let successCount = 0;
+      
+      document.documentElement.style.setProperty('--base-scale', 1);
+      document.documentElement.style.setProperty('--zoom-factor', 1);
+      
+      for (let i = 0; i < cardElements.length; i++) {
+        const node = cardElements[i]; node.scrollIntoView({ behavior: 'instant', block: 'center' }); await new Promise(resolve => setTimeout(resolve, 200)); 
+        try {
+          const dataUrl = await htmlToImage.toPng(node, { pixelRatio: 1, quality: 1.0, style: { transform: 'scale(1)', transformOrigin: 'top left' }, cacheBust: true });
+          zip.file(`Info-${i+1}.png`, dataUrl.split(',')[1], {base64: true}); successCount++;
+        } catch (error) { console.error(`失敗:`, error); }
+      }
+      
+      updateBaseScale();
+      document.documentElement.style.setProperty('--zoom-factor', viewZoom);
+      
+      if (successCount > 0) {
+        zip.generateAsync({type:"blob"}).then(function(content) { saveAs(content, `Cards_${document.querySelector('.cards-pane.active').id.replace('cards-','')}.zip`); btn.disabled = false; });
+      } else { btn.disabled = false; }
+    }
+
+    // ⭐ 啟動快取殺手引擎
+    bootSystem();
+  </script>
+</body>
+</html>

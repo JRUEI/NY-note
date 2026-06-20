@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>NY-note 全方位知識庫</title>
   <style>
+    /* 全局變數 */
     :root {
       --zoom-factor: 1;         
       --wiki-font-factor: 1;    
@@ -49,40 +50,28 @@
     
     /* 懸浮縮放控制面板 */
     .zoom-controls { position: fixed; bottom: 40px; right: 40px; background: rgba(20,20,20,0.9); border: 1px solid #333; border-radius: 12px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; z-index: 999; box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(10px); }
-    .zoom-controls button { background: #2a2a2a; color: #E8C97A; border: 1px solid #444; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; }
+    .zoom-controls button { background: #2a2a2a; color: #E8C97A; border: 1px solid #444; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; border: none; }
     .zoom-controls span { color: #EBEBEB; font-size: 15px; min-width: 65px; text-align: center; font-weight: bold; font-family: monospace; }
     #zoom-reset { width: auto; padding: 0 16px; font-size: 14px; }
 
     /* 視圖區塊 */
     .view-container { display: none; flex: 1; overflow: hidden; flex-direction: column; }
     .view-container.active { display: flex; }
+    
+    /* 🖼️ 圖卡區 (電腦版) */
     .cards-pane { display: none; flex: 1; overflow-y: auto; padding: 60px 20px; flex-direction: column; align-items: center; gap: 40px; }
     .cards-pane.active { display: flex; }
     .card-wrapper { width: calc(1080px * 0.35 * var(--zoom-factor)); height: calc(1920px * 0.35 * var(--zoom-factor)); flex-shrink: 0; position: relative; transition: all 0.2s ease; }
     .card-wrapper > div { transform: scale(calc(0.35 * var(--zoom-factor))); transform-origin: top left; box-shadow: 0 40px 100px rgba(0,0,0,0.8); position: absolute; top: 0; left: 0; border-radius: 20px; }
     
-    /* ⭐ 百科區 (加入浮水印支援) */
+    /* 📖 百科區 */
     .wiki-pane { display: none; flex: 1; overflow-y: auto; scroll-behavior: smooth; }
     .wiki-pane.active { display: block; }
     .article-container { max-width: 800px; margin: 0 auto; padding: 60px 40px 100px 40px; color: #d1d5db; line-height: 1.8; font-size: calc(18px * var(--wiki-font-factor)); }
     .article-container h1 { font-family: 'Songti TC', 'PMingLiU', serif; font-size: calc(48px * var(--wiki-font-factor)); color: #fff; line-height: 1.3; margin-bottom: 20px; }
     .article-container .meta { color: #E8C97A; font-size: calc(16px * var(--wiki-font-factor)); margin-bottom: 60px; font-weight: bold; display: flex; gap: 20px; border-bottom: 1px solid #333; padding-bottom: 20px; }
-    
-    /* 段落必須是 relative 才能包住絕對定位的浮水印 */
     .article-section { margin-bottom: 100px; scroll-margin-top: 40px; position: relative; }
-    
-    /* 巨型數字浮水印設計 */
-    .watermark { 
-      position: absolute; top: -50px; right: 0; 
-      font-family: 'Songti TC', 'PMingLiU', serif; 
-      font-size: calc(220px * var(--wiki-font-factor)); 
-      font-weight: 900; 
-      color: rgba(255,255,255,0.03); /* 超淡的白色，完美融入黑底 */
-      line-height: 1; z-index: 0; 
-      user-select: none; pointer-events: none; /* 防止干擾滑鼠選取文字 */
-    }
-    
-    /* 確保所有文字都在浮水印之上 */
+    .watermark { position: absolute; top: -50px; right: 0; font-family: 'Songti TC', 'PMingLiU', serif; font-size: calc(220px * var(--wiki-font-factor)); font-weight: 900; color: rgba(255,255,255,0.03); line-height: 1; z-index: 0; user-select: none; pointer-events: none; }
     .article-section h2, .article-section p, .article-section blockquote { position: relative; z-index: 1; }
     .article-section h2 { font-family: 'Songti TC', 'PMingLiU', serif; font-size: calc(32px * var(--wiki-font-factor)); color: #fff; margin: 0 0 30px 0; padding-left: 16px; border-left: 4px solid #1565C0; }
     .article-section blockquote { margin: 40px 0; padding: 24px 32px; background: #222; border-left: 4px solid #E8C97A; font-family: 'Songti TC', 'PMingLiU', serif; font-size: calc(22px * var(--wiki-font-factor)); color: #E8C97A; border-radius: 0 12px 12px 0; }
@@ -106,9 +95,10 @@
     .mm-leaf { background: #111; border: 1px solid #333; color: #bbb; font-size: 15px; transition: 0.2s; }
     .mm-leaf:hover { border-color: #E8C97A; color: #fff; transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.6); }
 
-    /* 手機版適配 (RWD) */
+    /* --- 手機版適配 (RWD) --- */
     .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 90; backdrop-filter: blur(2px); }
     .sidebar-overlay.active { display: block; }
+    
     @media (max-width: 768px) {
       .hamburger { display: block; }
       .sidebar { position: fixed; left: -320px; height: 100vh; transition: left 0.3s ease; }
@@ -117,17 +107,41 @@
       .toolbar h3 { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
       #statusText { display: none; }
       .action-btn { padding: 8px 12px; font-size: 13px; }
+      
       .zoom-controls { bottom: 20px; right: 20px; padding: 6px 10px; gap: 5px; }
       .zoom-controls button { width: 30px; height: 30px; font-size: 16px; }
       .zoom-controls span { font-size: 13px; min-width: 50px; }
-      .cards-pane { flex-direction: row; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; padding: 20px; gap: 15px; align-items: center; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+
+      /* ⭐ 手機版黃金比例圖卡：寬度 70vw，並置中吸附 */
+      .cards-pane { 
+        flex-direction: row; 
+        overflow-x: auto; 
+        overflow-y: hidden; 
+        scroll-snap-type: x mandatory; /* 開啟左右滑動吸附 */
+        padding: 20px 15vw;            /* 讓第一張跟最後一張完美置中 */
+        gap: 15px; 
+        align-items: center; 
+        -webkit-overflow-scrolling: touch; 
+        scrollbar-width: none; 
+      }
       .cards-pane::-webkit-scrollbar { display: none; }
-      .card-wrapper { width: calc((100vw - 40px) * var(--zoom-factor)); height: calc((100vw - 40px) * (1920 / 1080) * var(--zoom-factor)); scroll-snap-align: center; }
-      .card-wrapper > div { transform: scale(calc(((100vw - 40px) / 1080) * var(--zoom-factor))); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+      
+      .card-wrapper { 
+        /* 固定為螢幕的 70% 寬，高度依 16:9 自動運算，避免超出版面 */
+        width: calc(70vw * var(--zoom-factor)); 
+        height: calc(70vw * (1920 / 1080) * var(--zoom-factor)); 
+        scroll-snap-align: center; /* 滾動時吸附在畫面正中 */
+        margin-bottom: 0;
+      }
+      .card-wrapper > div { 
+        transform: scale(calc((70vw / 1080) * var(--zoom-factor))); 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+      }
+
       .article-container { padding: 20px 20px 80px 20px; font-size: calc(16px * var(--wiki-font-factor)); }
       .article-container h1 { font-size: calc(32px * var(--wiki-font-factor)); }
       .article-section h2 { font-size: calc(24px * var(--wiki-font-factor)); }
-      .watermark { font-size: calc(160px * var(--wiki-font-factor)); top: -30px; } /* 手機版浮水印稍微縮小 */
+      .watermark { font-size: calc(160px * var(--wiki-font-factor)); top: -30px; }
       .mindmap-pane { padding: 30px 20px; }
     }
 

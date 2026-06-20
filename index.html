@@ -5,43 +5,57 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>NY-note 全方位知識庫</title>
   <style>
-    /* 全局變數 */
+    /* ----------------------------------
+       全域變數與框架樣式
+       ---------------------------------- */
     :root {
       --zoom-factor: 1;         
       --wiki-font-factor: 1;    
     }
     body { margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden; background-color: #1a1a1a; color: #EBEBEB; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Microsoft JhengHei", sans-serif; }
     
-    /* 左側邊欄 */
+    /* ----------------------------------
+       左側邊欄
+       ---------------------------------- */
     .sidebar { width: 320px; background: #111111; display: flex; flex-direction: column; border-right: 1px solid #2A2A2A; box-shadow: 2px 0 15px rgba(0,0,0,0.5); z-index: 100; flex-shrink: 0; }
     .sidebar-header { padding: 30px 20px 15px 20px; border-bottom: 1px solid #2A2A2A; display: flex; flex-direction: column; gap: 15px; }
     .header-top { display: flex; justify-content: space-between; align-items: center; }
     .header-top h2 { margin: 0; font-size: 20px; color: #E8C97A; letter-spacing: 0.05em; }
+    
     .sort-btn { background: #222; border: 1px solid #444; color: #aaa; border-radius: 6px; padding: 4px 8px; cursor: pointer; transition: 0.2s; font-size: 12px; }
     .sort-btn:hover { background: #E8C97A; color: #111; border-color: #E8C97A; }
+    
     .mode-switch { display: flex; background: #222; border-radius: 8px; padding: 4px; gap: 4px; }
     .mode-btn { flex: 1; padding: 8px 0; text-align: center; font-size: 13px; cursor: pointer; border-radius: 6px; color: #888; transition: all 0.3s ease; font-weight: bold; }
     .mode-btn:hover { background: rgba(255,255,255,0.1); }
     .mode-btn.active { background: #E8C97A; color: #111; }
     
+    /* 左側選單內容 */
     .menu-container { flex: 1; overflow-y: auto; display: none; padding: 10px 0; }
     .menu-container.active { display: block; }
+    
     .menu-item { padding: 16px 24px; cursor: pointer; color: #aaa; transition: all 0.2s ease; display: flex; align-items: center; justify-content: space-between; font-size: 16px; border-left: 4px solid transparent; }
     .menu-item:hover { background: #1a1a1a; color: #fff; }
     .menu-item.active { background: rgba(232,201,122,0.1); color: #E8C97A; border-left: 4px solid #E8C97A; font-weight: bold; }
+    
     .menu-badge { background: #333; color: #aaa; font-size: 12px; padding: 2px 8px; border-radius: 12px; }
     .menu-item.active .menu-badge { background: #E8C97A; color: #111; }
+    
     .wiki-group { border-bottom: 1px solid #222; }
     .wiki-date-item { padding: 14px 24px; cursor: pointer; color: #E8C97A; font-weight: bold; font-size: 16px; background: rgba(20,20,20,0.5); display: flex; justify-content: space-between; }
     .wiki-chapters { display: none; padding: 8px 0; background: #0a0a0a; }
     .wiki-group.active .wiki-chapters { display: block; }
+    
     .chapter-link { display: block; padding: 10px 24px 10px 40px; color: #888; font-size: 14px; text-decoration: none; position: relative; }
     .chapter-link::before { content: "•"; position: absolute; left: 24px; color: #444; font-size: 18px; top: 8px; }
     .chapter-link.active-chapter { color: #E8C97A; }
     .chapter-link.active-chapter::before { content: "▸"; color: #E8C97A; font-size: 14px; top: 10px; left: 22px; }
 
-    /* 主內容區 */
+    /* ----------------------------------
+       主內容區
+       ---------------------------------- */
     .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #1a1a1a; position: relative; }
+    
     .toolbar { background: rgba(20,20,20,0.95); padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2A2A2A; z-index: 50; flex-shrink: 0; }
     .toolbar-left { display: flex; align-items: center; gap: 15px; }
     .hamburger { display: none; font-size: 24px; background: none; border: none; color: #E8C97A; cursor: pointer; padding: 0; }
@@ -51,31 +65,65 @@
     /* 懸浮縮放控制面板 */
     .zoom-controls { position: fixed; bottom: 40px; right: 40px; background: rgba(20,20,20,0.9); border: 1px solid #333; border-radius: 12px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; z-index: 999; box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(10px); }
     .zoom-controls button { background: #2a2a2a; color: #E8C97A; border: 1px solid #444; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; border: none; }
+    .zoom-controls button:hover { background: #E8C97A; color: #111; border-color: #E8C97A; }
     .zoom-controls span { color: #EBEBEB; font-size: 15px; min-width: 65px; text-align: center; font-weight: bold; font-family: monospace; }
     #zoom-reset { width: auto; padding: 0 16px; font-size: 14px; }
 
-    /* 視圖區塊 */
+    /* 各模式視圖容器 */
     .view-container { display: none; flex: 1; overflow: hidden; flex-direction: column; }
     .view-container.active { display: flex; }
     
-    /* 🖼️ 圖卡區 (電腦版) */
+    /* 🖼️ 圖卡預覽區 */
     .cards-pane { display: none; flex: 1; overflow-y: auto; padding: 60px 20px; flex-direction: column; align-items: center; gap: 40px; }
     .cards-pane.active { display: flex; }
-    .card-wrapper { width: calc(1080px * 0.35 * var(--zoom-factor)); height: calc(1920px * 0.35 * var(--zoom-factor)); flex-shrink: 0; position: relative; transition: all 0.2s ease; }
-    .card-wrapper > div { transform: scale(calc(0.35 * var(--zoom-factor))); transform-origin: top left; box-shadow: 0 40px 100px rgba(0,0,0,0.8); position: absolute; top: 0; left: 0; border-radius: 20px; }
+    .card-wrapper { 
+      width: calc(1080px * 0.35 * var(--zoom-factor)); 
+      height: calc(1920px * 0.35 * var(--zoom-factor)); 
+      flex-shrink: 0; position: relative; transition: all 0.2s ease; 
+    }
+    .card-wrapper > div { 
+      transform: scale(calc(0.35 * var(--zoom-factor))); 
+      transform-origin: top left; 
+      box-shadow: 0 40px 100px rgba(0,0,0,0.8); 
+      position: absolute; top: 0; left: 0; border-radius: 20px; 
+    }
     
-    /* 📖 百科區 */
+    /* 📖 百科閱讀區 (含內縮引用與數字浮水印) */
     .wiki-pane { display: none; flex: 1; overflow-y: auto; scroll-behavior: smooth; }
     .wiki-pane.active { display: block; }
     .article-container { max-width: 800px; margin: 0 auto; padding: 60px 40px 100px 40px; color: #d1d5db; line-height: 1.8; font-size: calc(18px * var(--wiki-font-factor)); }
     .article-container h1 { font-family: 'Songti TC', 'PMingLiU', serif; font-size: calc(48px * var(--wiki-font-factor)); color: #fff; line-height: 1.3; margin-bottom: 20px; }
     .article-container .meta { color: #E8C97A; font-size: calc(16px * var(--wiki-font-factor)); margin-bottom: 60px; font-weight: bold; display: flex; gap: 20px; border-bottom: 1px solid #333; padding-bottom: 20px; }
+    
     .article-section { margin-bottom: 100px; scroll-margin-top: 40px; position: relative; }
-    .watermark { position: absolute; top: -50px; right: 0; font-family: 'Songti TC', 'PMingLiU', serif; font-size: calc(220px * var(--wiki-font-factor)); font-weight: 900; color: rgba(255,255,255,0.03); line-height: 1; z-index: 0; user-select: none; pointer-events: none; }
-    .article-section h2, .article-section p, .article-section blockquote { position: relative; z-index: 1; }
+    .article-section h2, .article-section p { position: relative; z-index: 2; }
     .article-section h2 { font-family: 'Songti TC', 'PMingLiU', serif; font-size: calc(32px * var(--wiki-font-factor)); color: #fff; margin: 0 0 30px 0; padding-left: 16px; border-left: 4px solid #1565C0; }
-    .article-section blockquote { margin: 40px 0; padding: 24px 32px; background: #222; border-left: 4px solid #E8C97A; font-family: 'Songti TC', 'PMingLiU', serif; font-size: calc(22px * var(--wiki-font-factor)); color: #E8C97A; border-radius: 0 12px 12px 0; }
-    .tag { display: inline-block; background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 4px; font-size: calc(14px * var(--wiki-font-factor)); margin-bottom: 20px; position: relative; z-index: 1; }
+    
+    /* 內縮金句引用 */
+    .article-section blockquote { 
+      margin: 40px 0 40px 40px; 
+      padding: 24px 32px; 
+      background: rgba(34,34,34, 0.7); 
+      border-left: 4px solid #E8C97A; 
+      font-family: 'Songti TC', 'PMingLiU', serif; 
+      font-size: calc(22px * var(--wiki-font-factor)); 
+      color: #E8C97A; 
+      border-radius: 0 12px 12px 0; 
+      position: relative; z-index: 2; 
+    }
+    
+    /* 極淡金色浮水印 */
+    .watermark { 
+      position: absolute; top: -60px; right: 10px; 
+      font-family: 'Songti TC', 'PMingLiU', serif; 
+      font-size: calc(260px * var(--wiki-font-factor)); 
+      font-weight: 900; 
+      color: rgba(232, 201, 122, 0.04); 
+      line-height: 1; z-index: 0; 
+      user-select: none; pointer-events: none; 
+    }
+    
+    .tag { display: inline-block; background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 4px; font-size: calc(14px * var(--wiki-font-factor)); margin-bottom: 20px; position: relative; z-index: 2; }
     
     /* 🧠 心智圖區 */
     .mindmap-pane { display: none; flex: 1; overflow: auto; padding: 60px 80px; background: #161616; }
@@ -95,7 +143,9 @@
     .mm-leaf { background: #111; border: 1px solid #333; color: #bbb; font-size: 15px; transition: 0.2s; }
     .mm-leaf:hover { border-color: #E8C97A; color: #fff; transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.6); }
 
-    /* --- 手機版適配 (RWD) --- */
+    /* ----------------------------------
+       手機版適配 (RWD)
+       ---------------------------------- */
     .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 90; backdrop-filter: blur(2px); }
     .sidebar-overlay.active { display: block; }
     
@@ -112,43 +162,41 @@
       .zoom-controls button { width: 30px; height: 30px; font-size: 16px; }
       .zoom-controls span { font-size: 13px; min-width: 50px; }
 
-      /* ⭐ 手機版黃金比例圖卡：寬度 70vw，並置中吸附 */
+      /* 手機版水平側滑輪播圖卡 */
       .cards-pane { 
-        flex-direction: row; 
-        overflow-x: auto; 
-        overflow-y: hidden; 
-        scroll-snap-type: x mandatory; /* 開啟左右滑動吸附 */
-        padding: 20px 15vw;            /* 讓第一張跟最後一張完美置中 */
-        gap: 15px; 
-        align-items: center; 
-        -webkit-overflow-scrolling: touch; 
-        scrollbar-width: none; 
+        flex-direction: row; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; 
+        padding: 20px 15vw; gap: 15px; align-items: center; -webkit-overflow-scrolling: touch; scrollbar-width: none; 
       }
       .cards-pane::-webkit-scrollbar { display: none; }
-      
       .card-wrapper { 
-        /* 固定為螢幕的 70% 寬，高度依 16:9 自動運算，避免超出版面 */
         width: calc(70vw * var(--zoom-factor)); 
         height: calc(70vw * (1920 / 1080) * var(--zoom-factor)); 
-        scroll-snap-align: center; /* 滾動時吸附在畫面正中 */
-        margin-bottom: 0;
+        scroll-snap-align: center; margin-bottom: 0;
       }
       .card-wrapper > div { 
         transform: scale(calc((70vw / 1080) * var(--zoom-factor))); 
         box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
       }
 
+      /* 手機版的百科排版修正 */
       .article-container { padding: 20px 20px 80px 20px; font-size: calc(16px * var(--wiki-font-factor)); }
       .article-container h1 { font-size: calc(32px * var(--wiki-font-factor)); }
       .article-section h2 { font-size: calc(24px * var(--wiki-font-factor)); }
-      .watermark { font-size: calc(160px * var(--wiki-font-factor)); top: -30px; }
+      
+      /* 手機引用減少內縮 */
+      .article-section blockquote { margin: 30px 0 30px 16px; padding: 16px 20px; font-size: calc(18px * var(--wiki-font-factor)); }
+      /* 手機浮水印縮小並靠右 */
+      .watermark { font-size: calc(150px * var(--wiki-font-factor)); top: -40px; right: 0; }
+      
       .mindmap-pane { padding: 30px 20px; }
     }
 
+    /* 載入畫面 */
     #loading { position: fixed; inset: 0; background: #111; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #E8C97A; font-size: 24px; transition: 0.5s; flex-direction: column; gap: 20px; }
     .loader-spinner { width: 50px; height: 50px; border: 5px solid #333; border-top-color: #E8C97A; border-radius: 50%; animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
+  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -156,9 +204,13 @@
 </head>
 <body>
 
+  <!-- 啟動載入畫面 -->
   <div id="loading"><div class="loader-spinner"></div><div>NY-note 載入中...</div></div>
+  
+  <!-- 手機版選單遮罩 -->
   <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
+  <!-- 左側邊欄 -->
   <div class="sidebar">
     <div class="sidebar-header">
       <div class="header-top">
@@ -171,11 +223,13 @@
         <div class="mode-btn" onclick="switchMode('mindmap')">🧠 心智圖</div>
       </div>
     </div>
+    
     <div id="menu-cards" class="menu-container active"></div>
     <div id="menu-wiki" class="menu-container"></div>
     <div id="menu-mindmap" class="menu-container"></div>
   </div>
 
+  <!-- 右側內容區 -->
   <div class="main-content">
     <div class="toolbar">
       <div class="toolbar-left">
@@ -201,25 +255,60 @@
   </div>
 
   <script>
+    // 縮放雙引擎狀態
     let currentAppMode = 'cards'; 
     let viewZoom = 1;             
     let fontZoom = 1;             
 
-    function toggleSidebar() { document.querySelector('.sidebar').classList.toggle('open'); document.querySelector('.sidebar-overlay').classList.toggle('active'); }
-    function changeZoom(delta) { if (currentAppMode === 'wiki') { fontZoom += delta; if (fontZoom < 0.5) fontZoom = 0.5; if (fontZoom > 2.5) fontZoom = 2.5; } else { viewZoom += delta; if (viewZoom < 0.3) viewZoom = 0.3; if (viewZoom > 3) viewZoom = 3; } applyZoomDisplay(); }
-    function resetZoom() { if (currentAppMode === 'wiki') fontZoom = 1; else viewZoom = 1; applyZoomDisplay(); }
-    function applyZoomDisplay() { if (currentAppMode === 'wiki') { document.getElementById('zoom-level').innerText = Math.round(fontZoom * 100) + '%(字)'; document.documentElement.style.setProperty('--wiki-font-factor', fontZoom); } else { document.getElementById('zoom-level').innerText = Math.round(viewZoom * 100) + '%'; document.documentElement.style.setProperty('--zoom-factor', viewZoom); } }
+    // 手機版側欄切換
+    function toggleSidebar() { 
+      document.querySelector('.sidebar').classList.toggle('open'); 
+      document.querySelector('.sidebar-overlay').classList.toggle('active'); 
+    }
 
+    // 縮放控制
+    function changeZoom(delta) { 
+      if (currentAppMode === 'wiki') { fontZoom += delta; if (fontZoom < 0.5) fontZoom = 0.5; if (fontZoom > 2.5) fontZoom = 2.5; } 
+      else { viewZoom += delta; if (viewZoom < 0.3) viewZoom = 0.3; if (viewZoom > 3) viewZoom = 3; } 
+      applyZoomDisplay(); 
+    }
+    function resetZoom() { 
+      if (currentAppMode === 'wiki') fontZoom = 1; else viewZoom = 1; 
+      applyZoomDisplay(); 
+    }
+    function applyZoomDisplay() { 
+      if (currentAppMode === 'wiki') { document.getElementById('zoom-level').innerText = Math.round(fontZoom * 100) + '%(字)'; document.documentElement.style.setProperty('--wiki-font-factor', fontZoom); } 
+      else { document.getElementById('zoom-level').innerText = Math.round(viewZoom * 100) + '%'; document.documentElement.style.setProperty('--zoom-factor', viewZoom); } 
+    }
+
+    // 百科滾動監聽系統
     function handleWikiScroll(e) {
-      const pane = e.target; const paneRect = pane.getBoundingClientRect(); const sections = pane.querySelectorAll('.article-section'); let currentId = '';
-      sections.forEach(section => { if (section.getBoundingClientRect().top - paneRect.top <= 250) currentId = section.id; });
-      if (Math.abs(pane.scrollHeight - pane.scrollTop - pane.clientHeight) <= 10 && sections.length > 0) currentId = sections[sections.length - 1].id;
+      const pane = e.target; 
+      const paneRect = pane.getBoundingClientRect(); 
+      const sections = pane.querySelectorAll('.article-section'); 
+      let currentId = '';
+      
+      sections.forEach(section => { 
+        if (section.getBoundingClientRect().top - paneRect.top <= 250) currentId = section.id; 
+      });
+      
+      // 觸底判定
+      if (Math.abs(pane.scrollHeight - pane.scrollTop - pane.clientHeight) <= 10 && sections.length > 0) {
+        currentId = sections[sections.length - 1].id;
+      }
+      
+      // 更新左側選單狀態
       if (currentId) {
         const activeGroup = document.querySelector('.wiki-group.active');
-        if (activeGroup) activeGroup.querySelectorAll('.chapter-link').forEach(link => { link.classList.toggle('active-chapter', link.getAttribute('href') === `#${currentId}`); });
+        if (activeGroup) {
+          activeGroup.querySelectorAll('.chapter-link').forEach(link => { 
+            link.classList.toggle('active-chapter', link.getAttribute('href') === `#${currentId}`); 
+          });
+        }
       }
     }
 
+    // 動態載入資料夾內容
     async function loadEpisodes() {
       let loadedCount = 0;
       for (let date of EPISODES) {
@@ -232,81 +321,10 @@
           const title = meta.getAttribute('data-title');
           const count = meta.getAttribute('data-count');
 
+          // 注入左側目錄
           document.getElementById('menu-cards').insertAdjacentHTML('beforeend', `<div class="menu-item sort-item" data-sort="${date}" onclick="switchDate('${date}', this, 'cards')"><span>📅 ${date.substring(0,2)} / ${date.substring(2,4)}</span><span class="menu-badge">${count}張</span></div>`);
           document.getElementById('menu-wiki').insertAdjacentHTML('beforeend', `<div class="wiki-group sort-item" data-sort="${date}" id="wiki-group-${date}"><div class="wiki-date-item" onclick="switchDate('${date}', this.parentElement, 'wiki')"><span>📅 ${date.substring(0,2)} / ${date.substring(2,4)} 目錄</span><span>▾</span></div><div class="wiki-chapters">${doc.getElementById('tpl-chapters').innerHTML}</div></div>`);
           document.getElementById('menu-mindmap').insertAdjacentHTML('beforeend', `<div class="menu-item sort-item" data-sort="${date}" onclick="switchDate('${date}', this, 'mindmap')"><span>📅 ${date.substring(0,2)} / ${date.substring(2,4)} 架構</span><span class="menu-badge">全局</span></div>`);
 
-          document.getElementById('view-cards').insertAdjacentHTML('beforeend', `<div id="cards-${date}" class="cards-pane" data-title="${title}">${doc.getElementById('tpl-cards').innerHTML}</div>`);
-          document.getElementById('view-wiki').insertAdjacentHTML('beforeend', `<div id="wiki-${date}" class="wiki-pane" data-title="[百科閱讀] ${title}"><div class="article-container">${doc.getElementById('tpl-wiki').innerHTML}</div></div>`);
-          document.getElementById(`wiki-${date}`).addEventListener('scroll', handleWikiScroll);
-          document.getElementById('view-mindmap').insertAdjacentHTML('beforeend', `<div id="mindmap-${date}" class="mindmap-pane" data-title="[架構] ${title}">${doc.getElementById('tpl-mindmap').innerHTML}</div>`);
-          loadedCount++;
-        } catch (e) { console.error(`載入失敗: ${date}`, e); }
-      }
-      
-      applySort();
-      document.getElementById('loading').style.opacity = '0';
-      setTimeout(() => { document.getElementById('loading').style.display = 'none'; if(loadedCount === 0) document.getElementById('current-title').innerText = "查無資料庫"; }, 500);
-      const firstItem = document.querySelector('#menu-cards .menu-item'); if(firstItem) firstItem.click();
-    }
-
-    function switchMode(mode) {
-      currentAppMode = mode; applyZoomDisplay();    
-      document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active')); event.target.classList.add('active');
-      document.querySelectorAll('.menu-container').forEach(menu => menu.classList.remove('active')); document.getElementById('menu-' + mode).classList.add('active');
-      document.querySelectorAll('.view-container').forEach(view => view.classList.remove('active')); document.getElementById('view-' + mode).classList.add('active');
-
-      const statusText = document.getElementById('statusText'); const toolbarBtn = document.getElementById('toolbarBtn');
-      if (mode === 'cards') { statusText.innerText = '模式：預覽與打包'; toolbarBtn.innerText = '⬇️ 打包(ZIP)'; toolbarBtn.onclick = downloadAllCards; toolbarBtn.style.display = 'block'; } 
-      else if (mode === 'wiki') { statusText.innerText = '模式：沉浸式閱讀'; toolbarBtn.style.display = 'none'; } 
-      else { statusText.innerText = '模式：思維導圖'; toolbarBtn.style.display = 'none'; }
-      if(window.innerWidth <= 768 && document.querySelector('.sidebar').classList.contains('open')) toggleSidebar();
-      const activePane = document.querySelector('#view-' + mode + ' > .active'); if(activePane) document.getElementById('current-title').innerText = activePane.getAttribute('data-title');
-    }
-
-    function switchDate(dateId, element, mode) {
-      if(mode === 'wiki') document.querySelectorAll('#menu-wiki .wiki-group').forEach(el => el.classList.remove('active'));
-      else document.querySelectorAll('#menu-' + mode + ' .menu-item').forEach(el => el.classList.remove('active'));
-      element.classList.add('active');
-      const viewContainer = document.getElementById('view-' + mode);
-      for(let i=0; i<viewContainer.children.length; i++) viewContainer.children[i].classList.remove('active');
-      const targetPane = document.getElementById(mode + '-' + dateId);
-      if(targetPane) { targetPane.classList.add('active'); document.getElementById('current-title').innerText = targetPane.getAttribute('data-title'); }
-      if(window.innerWidth <= 768 && document.querySelector('.sidebar').classList.contains('open')) toggleSidebar();
-    }
-
-    function setActiveChapter(element) { document.querySelectorAll('.chapter-link').forEach(link => link.classList.remove('active-chapter')); element.classList.add('active-chapter'); if(window.innerWidth <= 768 && document.querySelector('.sidebar').classList.contains('open')) toggleSidebar(); }
-
-    let isDescending = true;
-    function toggleSort() { isDescending = !isDescending; document.getElementById('sortBtn').innerText = isDescending ? '降序 🔽' : '升序 🔼'; applySort(); }
-    function applySort() {
-      ['menu-cards', 'menu-wiki', 'menu-mindmap'].forEach(containerId => {
-        const container = document.getElementById(containerId); const items = Array.from(container.querySelectorAll('.sort-item'));
-        items.sort((a, b) => { return isDescending ? parseInt(b.getAttribute('data-sort')) - parseInt(a.getAttribute('data-sort')) : parseInt(a.getAttribute('data-sort')) - parseInt(b.getAttribute('data-sort')); });
-        items.forEach(item => container.appendChild(item));
-      });
-    }
-
-    async function downloadAllCards() {
-      const btn = document.getElementById('toolbarBtn'); btn.disabled = true;
-      const cardElements = document.querySelectorAll('.cards-pane.active .card-wrapper > div[id^="card-"]');
-      if (cardElements.length === 0) { alert("找不到卡片！"); btn.disabled = false; return; }
-      const zip = new JSZip(); let successCount = 0;
-      document.documentElement.style.setProperty('--zoom-factor', 1);
-      for (let i = 0; i < cardElements.length; i++) {
-        const node = cardElements[i]; node.scrollIntoView({ behavior: 'instant', block: 'center' }); await new Promise(resolve => setTimeout(resolve, 200)); 
-        try {
-          const dataUrl = await htmlToImage.toPng(node, { pixelRatio: 1, quality: 1.0, style: { transform: 'scale(1)', transformOrigin: 'top left' }, cacheBust: true });
-          zip.file(`Info-${i+1}.png`, dataUrl.split(',')[1], {base64: true}); successCount++;
-        } catch (error) { console.error(`失敗:`, error); }
-      }
-      document.documentElement.style.setProperty('--zoom-factor', viewZoom);
-      if (successCount > 0) {
-        zip.generateAsync({type:"blob"}).then(function(content) { saveAs(content, `Cards_${document.querySelector('.cards-pane.active').id.replace('cards-','')}.zip`); btn.disabled = false; });
-      } else { btn.disabled = false; }
-    }
-
-    window.addEventListener('DOMContentLoaded', loadEpisodes);
-  </script>
-</body>
-</html>
+          // 注入右側內容
+          document.getElementById('view-cards').insertAdjacentHTML('beforeend', `<div id="cards-${date}" class="cards-pane" data-title="${title}">${d

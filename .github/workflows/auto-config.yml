@@ -1,0 +1,31 @@
+name: Auto Generate Config JS
+
+on:
+  push:
+    paths:
+      - 'data/*.html' # 只要 data 資料夾有 HTML 被新增或修改，就觸發機器人
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Generate config.js
+        run: |
+          echo "const EPISODES = [" > config.js
+          # 自動掃描 data/ 下的所有 html 檔，去掉路徑和副檔名，按降序排列後寫入 config.js
+          ls data/*.html | sed 's/data\///g' | sed 's/\.html//g' | sort -r | while read line; do
+            echo "  \"$line\"," >> config.js
+          done
+          echo "];" >> config.js
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add config.js
+          # 如果名單有更新，機器人就自動幫你存檔並推播
+          git commit -m "🤖 Auto-updated config.js with new episodes" || echo "No changes to commit"
+          git push

@@ -4,8 +4,13 @@
   <meta charset="UTF-8">
   <title>Nicolas Young 全方位知識庫</title>
   <style>
-    /* 全局與框架樣式 */
+    /* 全局變數：分開控制整體縮放與百科字體大小 */
+    :root {
+      --zoom-factor: 1;         
+      --wiki-font-factor: 1;    
+    }
     body { margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden; background-color: #1a1a1a; color: #EBEBEB; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Microsoft JhengHei", sans-serif; }
+    
     .sidebar { width: 320px; background: #111111; display: flex; flex-direction: column; border-right: 1px solid #2A2A2A; box-shadow: 2px 0 15px rgba(0,0,0,0.5); z-index: 100; flex-shrink: 0; }
     .sidebar-header { padding: 30px 20px 15px 20px; border-bottom: 1px solid #2A2A2A; display: flex; flex-direction: column; gap: 15px; }
     .header-top { display: flex; justify-content: space-between; align-items: center; }
@@ -16,6 +21,7 @@
     .mode-btn { flex: 1; padding: 8px 0; text-align: center; font-size: 13px; cursor: pointer; border-radius: 6px; color: #888; transition: all 0.3s ease; font-weight: bold; }
     .mode-btn:hover { background: rgba(255,255,255,0.1); }
     .mode-btn.active { background: #E8C97A; color: #111; }
+    
     .menu-container { flex: 1; overflow-y: auto; display: none; padding: 10px 0; }
     .menu-container.active { display: block; }
     .menu-item { padding: 16px 24px; cursor: pointer; color: #aaa; transition: all 0.2s ease; display: flex; align-items: center; justify-content: space-between; font-size: 16px; border-left: 4px solid transparent; }
@@ -34,33 +40,47 @@
     .chapter-link.active-chapter::before { content: "▸"; color: #E8C97A; font-size: 14px; top: 10px; left: 22px; }
 
     /* 主內容區與工具列 */
-    .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #1a1a1a; }
+    .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #1a1a1a; position: relative; }
     .toolbar { background: rgba(20,20,20,0.95); padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2A2A2A; z-index: 50; flex-shrink: 0; }
     .toolbar h3 { margin: 0; font-size: 22px; }
     .action-btn { background: #E8C97A; color: #111; border: none; padding: 10px 24px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; }
     .action-btn:hover { background: #f2d999; transform: scale(1.05); }
 
-    /* 視圖容器 */
+    /* 懸浮縮放控制面板 */
+    .zoom-controls { position: fixed; bottom: 40px; right: 40px; background: rgba(20,20,20,0.9); border: 1px solid #333; border-radius: 12px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; z-index: 999; box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(10px); }
+    .zoom-controls button { background: #2a2a2a; color: #E8C97A; border: 1px solid #444; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-size: 20px; font-weight: bold; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+    .zoom-controls button:hover { background: #E8C97A; color: #111; border-color: #E8C97A; }
+    .zoom-controls span { color: #EBEBEB; font-size: 15px; min-width: 65px; text-align: center; font-weight: bold; font-family: monospace; }
+    #zoom-reset { width: auto; padding: 0 16px; font-size: 14px; }
+
+    /* 各模式視圖容器 */
     .view-container { display: none; flex: 1; overflow: hidden; flex-direction: column; }
     .view-container.active { display: flex; }
+    
+    /* 🖼️ 圖卡區 */
     .cards-pane { display: none; flex: 1; overflow-y: auto; padding: 60px 20px; flex-direction: column; align-items: center; gap: 40px; }
     .cards-pane.active { display: flex; }
-    .card-wrapper { width: 1080px; height: 1920px; transform-origin: top center; transform: scale(0.35); margin-bottom: -1248px; box-shadow: 0 40px 100px rgba(0,0,0,0.8); background: #111; }
+    .card-wrapper { 
+      width: 1080px; height: 1920px; transform-origin: top center; background: #111; box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+      transform: scale(calc(0.35 * var(--zoom-factor))); 
+      margin-bottom: calc(-1920px + (1920px * 0.35 * var(--zoom-factor)));
+    }
+    
+    /* 📖 百科區 */
     .wiki-pane { display: none; flex: 1; overflow-y: auto; scroll-behavior: smooth; }
     .wiki-pane.active { display: block; }
-    .article-container { max-width: 800px; margin: 0 auto; padding: 60px 40px 100px 40px; color: #d1d5db; line-height: 1.8; font-size: 18px; }
-    .article-container h1 { font-family: 'Songti TC', 'PMingLiU', serif; font-size: 48px; color: #fff; line-height: 1.3; margin-bottom: 20px; }
-    .article-container .meta { color: #E8C97A; font-size: 16px; margin-bottom: 60px; font-weight: bold; display: flex; gap: 20px; border-bottom: 1px solid #333; padding-bottom: 20px; }
+    .article-container { max-width: 800px; margin: 0 auto; padding: 60px 40px 100px 40px; color: #d1d5db; line-height: 1.8; font-size: calc(18px * var(--wiki-font-factor)); }
+    .article-container h1 { font-family: 'Songti TC', 'PMingLiU', serif; font-size: calc(48px * var(--wiki-font-factor)); color: #fff; line-height: 1.3; margin-bottom: 20px; }
+    .article-container .meta { color: #E8C97A; font-size: calc(16px * var(--wiki-font-factor)); margin-bottom: 60px; font-weight: bold; display: flex; gap: 20px; border-bottom: 1px solid #333; padding-bottom: 20px; }
     .article-section { margin-bottom: 80px; scroll-margin-top: 40px; }
-    .article-section h2 { font-family: 'Songti TC', 'PMingLiU', serif; font-size: 32px; color: #fff; margin: 0 0 30px 0; padding-left: 16px; border-left: 4px solid #1565C0; }
-    .article-section p { margin-bottom: 24px; color: #ccc; }
-    .article-section blockquote { margin: 40px 0; padding: 24px 32px; background: #222; border-left: 4px solid #E8C97A; font-family: 'Songti TC', 'PMingLiU', serif; font-size: 22px; color: #E8C97A; border-radius: 0 12px 12px 0; }
-    .tag { display: inline-block; background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 4px; font-size: 14px; margin-bottom: 20px; }
+    .article-section h2 { font-family: 'Songti TC', 'PMingLiU', serif; font-size: calc(32px * var(--wiki-font-factor)); color: #fff; margin: 0 0 30px 0; padding-left: 16px; border-left: 4px solid #1565C0; }
+    .article-section blockquote { margin: 40px 0; padding: 24px 32px; background: #222; border-left: 4px solid #E8C97A; font-family: 'Songti TC', 'PMingLiU', serif; font-size: calc(22px * var(--wiki-font-factor)); color: #E8C97A; border-radius: 0 12px 12px 0; }
+    .tag { display: inline-block; background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 4px; font-size: calc(14px * var(--wiki-font-factor)); margin-bottom: 20px; }
+    
+    /* 🧠 心智圖區 */
     .mindmap-pane { display: none; flex: 1; overflow: auto; padding: 60px 80px; background: #161616; }
     .mindmap-pane.active { display: block; }
-
-    /* 心智圖 Pure CSS */
-    .mm-tree { display: flex; align-items: center; font-family: 'PingFang TC', sans-serif; margin-bottom: 100px; }
+    .mm-tree { display: flex; align-items: center; font-family: 'PingFang TC', sans-serif; margin-bottom: 100px; zoom: var(--zoom-factor); }
     .mm-children { display: flex; flex-direction: column; gap: 24px; padding-left: 50px; position: relative; }
     .mm-branch { display: flex; align-items: center; position: relative; }
     .mm-branch::before { content: ''; position: absolute; left: -50px; top: 50%; width: 50px; border-top: 2px solid #555; }
@@ -76,19 +96,22 @@
     .mm-leaf:hover { border-color: #E8C97A; color: #fff; transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.6); }
     
     /* 載入畫面 */
-    #loading { position: fixed; inset: 0; background: #111; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #E8C97A; font-size: 24px; transition: 0.5s; }
+    #loading { position: fixed; inset: 0; background: #111; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #E8C97A; font-size: 24px; transition: 0.5s; flex-direction: column; gap: 20px; }
+    .loader-spinner { width: 50px; height: 50px; border: 5px solid #333; border-top-color: #E8C97A; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-  <!-- 載入設定檔 -->
   <script src="config.js"></script>
 </head>
 <body>
 
-  <div id="loading">載入知識庫中...</div>
+  <div id="loading">
+    <div class="loader-spinner"></div>
+    <div>知識庫模組動態載入中...</div>
+  </div>
 
-  <!-- 左側邊欄 -->
   <div class="sidebar">
     <div class="sidebar-header">
       <div class="header-top">
@@ -102,13 +125,11 @@
       </div>
     </div>
     
-    <!-- 空選單，等待 JS 填入 -->
     <div id="menu-cards" class="menu-container active"></div>
     <div id="menu-wiki" class="menu-container"></div>
     <div id="menu-mindmap" class="menu-container"></div>
   </div>
 
-  <!-- 右側主要內容區 -->
   <div class="main-content">
     <div class="toolbar">
       <div>
@@ -118,15 +139,93 @@
       <button class="action-btn" id="toolbarBtn" onclick="downloadAllCards()">⬇️ 一鍵打包 (ZIP)</button>
     </div>
 
-    <!-- 空內容區，等待 JS 填入 -->
     <div id="view-cards" class="view-container active"></div>
     <div id="view-wiki" class="view-container"></div>
     <div id="view-mindmap" class="view-container"></div>
+    
+    <div class="zoom-controls">
+      <button onclick="changeZoom(-0.1)">-</button>
+      <span id="zoom-level">100%</span>
+      <button onclick="changeZoom(0.1)">+</button>
+      <button id="zoom-reset" onclick="resetZoom()">重置</button>
+    </div>
   </div>
 
   <script>
-    // 1. 動態讀取資料庫
+    // 0. 智慧雙引擎縮放邏輯
+    let currentAppMode = 'cards'; 
+    let viewZoom = 1;             
+    let fontZoom = 1;             
+
+    function changeZoom(delta) {
+      if (currentAppMode === 'wiki') {
+        fontZoom += delta;
+        if (fontZoom < 0.5) fontZoom = 0.5; 
+        if (fontZoom > 2.5) fontZoom = 2.5; 
+      } else {
+        viewZoom += delta;
+        if (viewZoom < 0.3) viewZoom = 0.3; 
+        if (viewZoom > 3) viewZoom = 3;     
+      }
+      applyZoomDisplay();
+    }
+
+    function resetZoom() {
+      if (currentAppMode === 'wiki') fontZoom = 1;
+      else viewZoom = 1;
+      applyZoomDisplay();
+    }
+
+    function applyZoomDisplay() {
+      if (currentAppMode === 'wiki') {
+        document.getElementById('zoom-level').innerText = Math.round(fontZoom * 100) + '%(字)';
+        document.documentElement.style.setProperty('--wiki-font-factor', fontZoom);
+      } else {
+        document.getElementById('zoom-level').innerText = Math.round(viewZoom * 100) + '%';
+        document.documentElement.style.setProperty('--zoom-factor', viewZoom);
+      }
+    }
+
+    // ⭐ 1. 百科滾動監聽系統 (Scrollspy)
+    function handleWikiScroll(e) {
+      const pane = e.target;
+      const paneRect = pane.getBoundingClientRect();
+      const sections = pane.querySelectorAll('.article-section');
+      let currentId = '';
+
+      sections.forEach(section => {
+        const rect = section.getBoundingClientRect();
+        // 只要區塊的頂部到達視窗上半部 (250px內)，就視為進入該章節
+        if (rect.top - paneRect.top <= 250) {
+          currentId = section.id;
+        }
+      });
+
+      // 觸底偵測：如果滑到最底下，強制選中最後一個章節 (容錯10px)
+      if (Math.abs(pane.scrollHeight - pane.scrollTop - pane.clientHeight) <= 10) {
+        if (sections.length > 0) {
+          currentId = sections[sections.length - 1].id;
+        }
+      }
+
+      // 同步更新左側選單
+      if (currentId) {
+        const activeGroup = document.querySelector('.wiki-group.active');
+        if (activeGroup) {
+          activeGroup.querySelectorAll('.chapter-link').forEach(link => {
+            if (link.getAttribute('href') === `#${currentId}`) {
+              link.classList.add('active-chapter');
+            } else {
+              link.classList.remove('active-chapter');
+            }
+          });
+        }
+      }
+    }
+
+    // 2. 動態讀取資料庫
     async function loadEpisodes() {
+      let loadedCount = 0;
       for (let date of EPISODES) {
         try {
           const res = await fetch(`data/${date}.html`);
@@ -145,31 +244,44 @@
           const wiki = doc.getElementById('tpl-wiki').innerHTML;
           const mindmap = doc.getElementById('tpl-mindmap').innerHTML;
 
-          // 注入左側選單
           document.getElementById('menu-cards').insertAdjacentHTML('beforeend', `<div class="menu-item sort-item" data-sort="${date}" onclick="switchDate('${date}', this, 'cards')"><span>📅 ${date.substring(0,2)} / ${date.substring(2,4)}</span><span class="menu-badge">${count}張</span></div>`);
           document.getElementById('menu-wiki').insertAdjacentHTML('beforeend', `<div class="wiki-group sort-item" data-sort="${date}" id="wiki-group-${date}"><div class="wiki-date-item" onclick="switchDate('${date}', this.parentElement, 'wiki')"><span>📅 ${date.substring(0,2)} / ${date.substring(2,4)} 目錄</span><span>▾</span></div><div class="wiki-chapters">${chapters}</div></div>`);
           document.getElementById('menu-mindmap').insertAdjacentHTML('beforeend', `<div class="menu-item sort-item" data-sort="${date}" onclick="switchDate('${date}', this, 'mindmap')"><span>📅 ${date.substring(0,2)} / ${date.substring(2,4)} 架構</span><span class="menu-badge">全局</span></div>`);
 
-          // 注入右側內容
           document.getElementById('view-cards').insertAdjacentHTML('beforeend', `<div id="cards-${date}" class="cards-pane" data-title="${title}">${cards}</div>`);
-          document.getElementById('view-wiki').insertAdjacentHTML('beforeend', `<div id="wiki-${date}" class="wiki-pane" data-title="[百科閱讀] ${title}"><div class="article-container">${wiki}</div></div>`);
-          document.getElementById('view-mindmap').insertAdjacentHTML('beforeend', `<div id="mindmap-${date}" class="mindmap-pane" data-title="[架構] ${title}">${mindmap}</div>`);
+          
+          // 插入百科內容
+          const wikiPaneHtml = `<div id="wiki-${date}" class="wiki-pane" data-title="[百科閱讀] ${title}"><div class="article-container">${wiki}</div></div>`;
+          document.getElementById('view-wiki').insertAdjacentHTML('beforeend', wikiPaneHtml);
+          
+          // ⭐ 替剛產生的百科區塊綁定滾動事件
+          document.getElementById(`wiki-${date}`).addEventListener('scroll', handleWikiScroll);
 
+          document.getElementById('view-mindmap').insertAdjacentHTML('beforeend', `<div id="mindmap-${date}" class="mindmap-pane" data-title="[架構] ${title}">${mindmap}</div>`);
+          
+          loadedCount++;
         } catch (e) { console.error(`載入失敗: ${date}`, e); }
       }
       
-      // 載入完成，執行初始排序並隱藏 Loading
       applySort();
       document.getElementById('loading').style.opacity = '0';
-      setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
+      setTimeout(() => {
+        document.getElementById('loading').style.display = 'none';
+        if(loadedCount === 0) {
+          alert("尚未載入任何資料！請確認 Github Pages 權限為 Public，且 data/ 內有正確的 html 檔案。");
+          document.getElementById('current-title').innerText = "查無資料庫";
+        }
+      }, 500);
 
-      // 自動點擊最新的一集
       const firstItem = document.querySelector('#menu-cards .menu-item');
       if(firstItem) firstItem.click();
     }
 
-    // 2. 交互邏輯
+    // 3. 切換模式
     function switchMode(mode) {
+      currentAppMode = mode; 
+      applyZoomDisplay();    
+
       document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
       event.target.classList.add('active');
       document.querySelectorAll('.menu-container').forEach(menu => menu.classList.remove('active'));
@@ -179,9 +291,18 @@
 
       const statusText = document.getElementById('statusText');
       const toolbarBtn = document.getElementById('toolbarBtn');
-      if (mode === 'cards') { statusText.innerText = '模式：圖卡預覽與打包'; toolbarBtn.innerText = '⬇️ 一鍵打包 (ZIP)'; toolbarBtn.onclick = downloadAllCards; } 
-      else if (mode === 'wiki') { statusText.innerText = '模式：百科閱讀'; toolbarBtn.innerText = '📋 準備就緒'; toolbarBtn.onclick = null; } 
-      else { statusText.innerText = '模式：全局思維導圖'; toolbarBtn.innerText = '🧠 結構檢視中'; toolbarBtn.onclick = null; }
+      if (mode === 'cards') { 
+        statusText.innerText = '模式：圖卡預覽與打包'; toolbarBtn.innerText = '⬇️ 一鍵打包 (ZIP)'; 
+        toolbarBtn.onclick = downloadAllCards; toolbarBtn.style.display = 'block';
+      } 
+      else if (mode === 'wiki') { 
+        statusText.innerText = '模式：沉浸式閱讀'; toolbarBtn.innerText = '📋 準備就緒'; 
+        toolbarBtn.onclick = null; toolbarBtn.style.display = 'none';
+      } 
+      else { 
+        statusText.innerText = '模式：全局思維導圖'; toolbarBtn.innerText = '🧠 結構檢視中'; 
+        toolbarBtn.onclick = null; toolbarBtn.style.display = 'none';
+      }
 
       const activePane = document.querySelector('#view-' + mode + ' > .active');
       if(activePane) document.getElementById('current-title').innerText = activePane.getAttribute('data-title');
@@ -202,12 +323,13 @@
       }
     }
 
+    // 點擊左側目錄的平滑滾動
     function setActiveChapter(element) {
       document.querySelectorAll('.chapter-link').forEach(link => link.classList.remove('active-chapter'));
       element.classList.add('active-chapter');
     }
 
-    // 3. 排序邏輯
+    // 4. 排序邏輯
     let isDescending = true;
     function toggleSort() {
       isDescending = !isDescending;
@@ -227,30 +349,36 @@
       });
     }
 
-    // 4. 打包邏輯
+    // 5. 打包邏輯
     async function downloadAllCards() {
       const btn = document.getElementById('toolbarBtn');
       const statusText = document.getElementById('statusText');
       btn.disabled = true;
-      const cardElements = document.querySelectorAll('.cards-pane.active .card-wrapper > div');
+      const cardElements = document.querySelectorAll('.cards-pane.active .card-wrapper > div[id^="card-"]');
       if (cardElements.length === 0) { statusText.innerText = "❌ 找不到卡片！"; btn.disabled = false; return; }
 
       const zip = new JSZip(); let successCount = 0;
+      document.documentElement.style.setProperty('--zoom-factor', 1);
+
       for (let i = 0; i < cardElements.length; i++) {
         statusText.innerText = `⏳ 擷取中：第 ${i + 1} / ${cardElements.length} 張...`;
         const node = cardElements[i];
         node.scrollIntoView({ behavior: 'instant', block: 'center' });
         await new Promise(resolve => setTimeout(resolve, 200)); 
+        
         try {
           const dataUrl = await htmlToImage.toPng(node, { pixelRatio: 1, quality: 1.0, style: { transform: 'scale(1)', transformOrigin: 'top left' }, cacheBust: true });
           zip.file(`Info-${i+1}.png`, dataUrl.split(',')[1], {base64: true});
           successCount++;
         } catch (error) { console.error(`失敗:`, error); }
       }
+      
+      document.documentElement.style.setProperty('--zoom-factor', viewZoom);
+
       if (successCount > 0) {
         statusText.innerText = `📦 生成 ZIP 檔...`;
         zip.generateAsync({type:"blob"}).then(function(content) {
-          saveAs(content, `Cards_${document.querySelector('.cards-pane.active').id}.zip`);
+          saveAs(content, `Cards_${document.querySelector('.cards-pane.active').id.replace('cards-','')}.zip`);
           statusText.innerText = `🎉 打包完成！`; btn.disabled = false;
         });
       } else { btn.disabled = false; }
